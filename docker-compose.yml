@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: 7ssabi_db
+    restart: always
+    environment:
+      POSTGRES_USER: ssabi_user
+      POSTGRES_PASSWORD: ssabi_password
+      POSTGRES_DB: 7ssabi_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - 7ssabi_network
+
+  # Backend FastAPI
+  backend:
+    build: ./backend
+    container_name: 7ssabi_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://ssabi_user:ssabi_password@db:5432/7ssabi_db
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - invoices_data:/app/invoices
+      - receipts_data:/app/receipts
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - 7ssabi_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend React (à venir)
+  # frontend:
+  #   build: ./frontend
+  #   container_name: 7ssabi_frontend
+  #   restart: always
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - 7ssabi_network
+
+volumes:
+  postgres_data:
+  invoices_data:
+  receipts_data:
+
+networks:
+  7ssabi_network:
+    driver: bridge

@@ -1,0 +1,45 @@
+# Backend
+backend/venv/
+backend/env/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+backend/*.db
+backend/*.sqlite
+backend/invoices/*.pdf
+backend/receipts/*
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+
+# Docker
+*.env.docker
+
+# Misc
+*.bak
+*.tmp
+.temp/
