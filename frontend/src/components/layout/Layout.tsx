@@ -231,6 +231,7 @@ import {
   Person as PersonIcon,
   KeyboardArrowDown,
   Notifications,
+  ShowChart as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/store/authStore';
 
@@ -244,6 +245,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { text: 'Tableau de bord', icon: <DashboardIcon />, path: '/' },
+  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Clients', icon: <PeopleIcon />, path: '/clients' },
   { text: 'Produits', icon: <InventoryIcon />, path: '/products' },
   { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },

@@ -84,6 +84,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unit_price: number;
+  tva_rate?: number;
   total: number;
 }
 
@@ -91,30 +92,39 @@ export interface Invoice {
   id: number;
   user_id: number;
   client_id: number;
+  client?: Client; // Relation avec le client
   invoice_number: string;
   date: string;
   due_date?: string;
   total_ht: number;
-  tva_rate: number;
-  tva_amount: number;
+  total_tva: number;
   total_ttc: number;
-  status: 'paid' | 'unpaid' | 'partial' | 'cancelled';
-  paid_amount: number;
+  status: 'draft' | 'paid' | 'unpaid' | 'partial' | 'cancelled';
+  paid_amount?: number;
   notes?: string;
   pdf_url?: string;
   is_quote: boolean;
-  items: InvoiceItem[];
+  items?: InvoiceItem[];
   created_at: string;
 }
 
 export interface InvoiceFormData {
   client_id: number;
+  invoice_number?: string;
   date: string;
   due_date?: string;
-  tva_rate: number;
+  status?: 'draft' | 'paid' | 'unpaid' | 'partial' | 'cancelled';
   notes?: string;
   is_quote: boolean;
-  items: InvoiceItem[];
+  total_ht?: number;
+  total_tva?: number;
+  total_ttc?: number;
+  items?: Array<{
+    product_id?: number;
+    description: string;
+    quantity: number;
+    unit_price: number;
+  }>;
 }
 
 // Expense

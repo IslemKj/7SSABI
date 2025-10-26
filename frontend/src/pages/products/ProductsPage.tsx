@@ -304,17 +304,26 @@ import { productService } from '@/services/productService';
 import { config } from '@/config/config';
 import type { Product, ProductFormData } from '@/types';
 
+// Type local pour le formulaire acceptant des strings pendant la saisie
+interface ProductFormState {
+  name: string;
+  description?: string;
+  category: string;
+  price: string | number;
+  tva_rate: string | number;
+}
+
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState<ProductFormData>({
+  const [formData, setFormData] = useState<ProductFormState>({
     name: '',
     description: '',
     category: 'produit',
-    price: 0,
+    price: '',
     tva_rate: 19,
   });
 
@@ -349,7 +358,7 @@ const ProductsPage = () => {
         name: '',
         description: '',
         category: 'produit',
-        price: 0,
+        price: '',
         tva_rate: 19,
       });
     }
@@ -363,28 +372,54 @@ const ProductsPage = () => {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    // Convertir en nombre pour les champs numériques
-    const parsedValue = (name === 'price' || name === 'tva_rate') 
-      ? (value === '' ? 0 : Number(value))
-      : value;
     
     setFormData({
       ...formData,
-      [name]: parsedValue,
+      [name]: value,
     });
   };
 
   const handleSubmit = async () => {
     try {
-      if (editingProduct) {
-        await productService.update(editingProduct.id, formData);
-      } else {
-        await productService.create(formData);
+      // Convertir les champs numériques avant l'envoi
+      const price = Number(formData.price);
+      const tva_rate = Number(formData.tva_rate);
+      
+      // Validation
+      if (!formData.name || !formData.category) {
+        alert('Veuillez remplir tous les champs obligatoires');
+        return;
       }
+      
+      if (isNaN(price) || price <= 0) {
+        alert('Le prix doit être un nombre supérieur à 0');
+        return;
+      }
+      
+      if (isNaN(tva_rate) || tva_rate < 0) {
+        alert('Le taux de TVA doit être un nombre positif');
+        return;
+      }
+      
+      const dataToSubmit = {
+        ...formData,
+        price,
+        tva_rate,
+      };
+      
+      console.log('Données envoyées:', dataToSubmit);
+      
+      if (editingProduct) {
+        await productService.update(editingProduct.id, dataToSubmit);
+      } else {
+        await productService.create(dataToSubmit);
+      }
+      
       handleCloseDialog();
       loadProducts();
     } catch (error) {
       console.error('Erreur sauvegarde produit:', error);
+      alert('Erreur lors de la sauvegarde du produit');
     }
   };
 
@@ -904,7 +939,20 @@ const ProductsPage = () => {
               </TableRow>
             ) : (
               filteredProducts.map((product) => {
-                const priceTTC = product.price * (1 + product.tva_rate / 100);
+                const price = Number(product.price) || 0;
+                const tvaRate = Number(product.tva_rate) || 0;
+                const priceTTC = price * (1 + tvaRate / 100);
+                
+                // Debug: vérifier les valeurs
+                if (isNaN(priceTTC)) {
+                  console.warn('Prix TTC invalide pour le produit:', {
+                    product,
+                    price,
+                    tvaRate,
+                    priceTTC
+                  });
+                }
+                
                 return (
                   <TableRow
                     key={product.id}
@@ -972,7 +1020,7 @@ const ProductsPage = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                        {product.price.toLocaleString('fr-DZ')} DA
+                        {(product.price || 0).toLocaleString('fr-DZ')} DA
                       </Typography>
                     </TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
@@ -1167,6 +1215,7 @@ const ProductsPage = () => {
               onChange={handleChange}
               required
               fullWidth
+              inputProps={{ min: 0, step: "0.01" }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

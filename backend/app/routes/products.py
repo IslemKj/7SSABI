@@ -69,11 +69,15 @@ def create_product(
     # Convertir les données du schéma vers le modèle de base de données
     product_dict = product_data.model_dump(by_alias=False)
     
+    # DEBUG: Afficher les données reçues
+    print(f"DEBUG - Données reçues: {product_dict}")
+    print(f"DEBUG - Price value: {product_dict.get('price')} (type: {type(product_dict.get('price'))})")
+    
     # Mapper les champs
     db_data = {
         'name': product_dict['name'],
         'description': product_dict.get('description'),
-        'unit_price': product_dict['price'],
+        'unit_price': product_dict.get('price', 0),
         'tva_rate': product_dict.get('tva_rate', 19),
         'category': product_dict.get('category', 'produit'),
         'is_service': product_dict.get('category') == 'service',
@@ -81,11 +85,15 @@ def create_product(
         'user_id': current_user.id
     }
     
+    print(f"DEBUG - DB Data: {db_data}")
+    
     product = Product(**db_data)
     
     db.add(product)
     db.commit()
     db.refresh(product)
+    
+    print(f"DEBUG - Product created: id={product.id}, unit_price={product.unit_price}")
     
     return product
 
@@ -113,6 +121,10 @@ def update_product(
     
     # Convertir et mettre à jour les champs
     update_dict = product_data.model_dump(exclude_unset=True, by_alias=False)
+    
+    # DEBUG: Afficher les données de mise à jour
+    print(f"DEBUG UPDATE - Données reçues: {update_dict}")
+    print(f"DEBUG UPDATE - Price value: {update_dict.get('price')} (type: {type(update_dict.get('price'))})")
     
     if 'price' in update_dict:
         product.unit_price = update_dict['price']

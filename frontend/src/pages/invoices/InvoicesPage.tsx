@@ -209,12 +209,18 @@ import {
   InputAdornment,
   TextField,
   Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Visibility as ViewIcon, 
   Download as DownloadIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
   Receipt as ReceiptIcon,
   Description as DescriptionIcon,
   Search as SearchIcon,
@@ -228,12 +234,17 @@ import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import InvoiceForm from './InvoiceForm';
 
 const InvoicesPage = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     loadInvoices();
@@ -248,6 +259,46 @@ const InvoicesPage = () => {
       console.error('Erreur chargement factures:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenDialog = (invoice?: Invoice) => {
+    setEditingInvoice(invoice || null);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingInvoice(null);
+  };
+
+  const handleSaveInvoice = () => {
+    loadInvoices();
+  };
+
+  const handleViewDetails = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setSelectedInvoice(null);
+  };
+
+  const handleDeleteInvoice = async (id: number, invoiceNumber: string) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la facture ${invoiceNumber} ?\n\nCette action est irréversible.`)) {
+      try {
+        await invoiceService.delete(id);
+        loadInvoices();
+        // Fermer le dialog de détails si ouvert
+        if (selectedInvoice?.id === id) {
+          handleCloseDetails();
+        }
+      } catch (error) {
+        console.error('Erreur suppression facture:', error);
+        alert('Erreur lors de la suppression de la facture');
+      }
     }
   };
 
@@ -291,7 +342,7 @@ const InvoicesPage = () => {
       case 'cancelled':
         return <CancelIcon sx={{ fontSize: 16 }} />;
       default:
-        return null;
+        return undefined;
     }
   };
 
@@ -422,7 +473,7 @@ const InvoicesPage = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => alert('Création de facture à venir')}
+            onClick={() => handleOpenDialog()}
             sx={{
               bgcolor: 'white',
               color: '#667eea',
@@ -920,17 +971,17 @@ const InvoicesPage = () => {
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                      {invoice.total_ht.toLocaleString('fr-DZ')} DA
+                      {(invoice.total_ht || 0).toLocaleString('fr-DZ')} DA
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                      {invoice.tva_amount.toLocaleString('fr-DZ')} DA
+                      {(invoice.total_tva || 0).toLocaleString('fr-DZ')} DA
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body1" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                      {invoice.total_ttc.toLocaleString('fr-DZ')} DA
+                      {(invoice.total_ttc || 0).toLocaleString('fr-DZ')} DA
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -950,7 +1001,7 @@ const InvoicesPage = () => {
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                       <IconButton
-                        onClick={() => alert('Voir détails')}
+                        onClick={() => handleViewDetails(invoice)}
                         size="small"
                         sx={{
                           bgcolor: alpha('#6366f1', 0.1),
@@ -980,7 +1031,7 @@ const InvoicesPage = () => {
                         <DownloadIcon fontSize="small" />
                       </IconButton>
                       <IconButton
-                        onClick={() => alert('Modifier facture')}
+                        onClick={() => handleOpenDialog(invoice)}
                         size="small"
                         sx={{
                           bgcolor: alpha('#f59e0b', 0.1),
@@ -994,6 +1045,21 @@ const InvoicesPage = () => {
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
+                      <IconButton
+                        onClick={() => handleDeleteInvoice(invoice.id, invoice.invoice_number)}
+                        size="small"
+                        sx={{
+                          bgcolor: alpha('#ef4444', 0.1),
+                          color: '#ef4444',
+                          '&:hover': {
+                            bgcolor: alpha('#ef4444', 0.2),
+                            transform: 'scale(1.1)',
+                          },
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -1002,6 +1068,212 @@ const InvoicesPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Dialog de création/modification */}
+      <InvoiceForm
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onSave={handleSaveInvoice}
+        invoice={editingInvoice}
+        isQuote={tabValue === 1}
+      />
+
+      {/* Dialog des détails */}
+      <Dialog open={detailsOpen} onClose={handleCloseDetails} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#6366f1', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">
+            Détails {selectedInvoice?.is_quote ? 'du Devis' : 'de la Facture'}
+          </Typography>
+          <IconButton onClick={handleCloseDetails} sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {selectedInvoice && (
+            <Grid container spacing={3}>
+              {/* Informations principales */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, bgcolor: '#f8fafc' }}>
+                  <Typography variant="h6" gutterBottom sx={{ color: '#6366f1', fontWeight: 600 }}>
+                    Informations générales
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">Numéro</Typography>
+                      <Typography variant="body1" fontWeight={600}>{selectedInvoice.invoice_number}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">Date</Typography>
+                      <Typography variant="body1" fontWeight={600}>
+                        {format(new Date(selectedInvoice.date), 'dd MMMM yyyy', { locale: fr })}
+                      </Typography>
+                    </Grid>
+                    {selectedInvoice.due_date && (
+                      <Grid item xs={6}>
+                        <Typography variant="body2" color="text.secondary">Date d'échéance</Typography>
+                        <Typography variant="body1" fontWeight={600}>
+                          {format(new Date(selectedInvoice.due_date), 'dd MMMM yyyy', { locale: fr })}
+                        </Typography>
+                      </Grid>
+                    )}
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">Statut</Typography>
+                      <Chip
+                        label={getStatusLabel(selectedInvoice.status)}
+                        size="small"
+                        sx={{
+                          mt: 0.5,
+                          bgcolor: alpha(getStatusColor(selectedInvoice.status), 0.1),
+                          color: getStatusColor(selectedInvoice.status),
+                          fontWeight: 600,
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+
+              {/* Client */}
+              {selectedInvoice.client && (
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 2, bgcolor: '#f8fafc' }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#6366f1', fontWeight: 600 }}>
+                      Client
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Typography variant="body1" fontWeight={600}>{selectedInvoice.client.name}</Typography>
+                    {selectedInvoice.client.email && (
+                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.email}</Typography>
+                    )}
+                    {selectedInvoice.client.phone && (
+                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.phone}</Typography>
+                    )}
+                    {selectedInvoice.client.address && (
+                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.address}</Typography>
+                    )}
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Lignes de la facture */}
+              {selectedInvoice.items && selectedInvoice.items.length > 0 && (
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: '#6366f1', fontWeight: 600 }}>
+                      Détails des lignes
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Description</TableCell>
+                            <TableCell align="right">Quantité</TableCell>
+                            <TableCell align="right">Prix unitaire</TableCell>
+                            <TableCell align="right">Total</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {selectedInvoice.items.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{item.description}</TableCell>
+                              <TableCell align="right">{item.quantity}</TableCell>
+                              <TableCell align="right">{Number(item.unit_price).toLocaleString('fr-DZ')} DA</TableCell>
+                              <TableCell align="right">{Number(item.total).toLocaleString('fr-DZ')} DA</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Totaux */}
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, bgcolor: '#f0fdf4' }}>
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">Total HT</Typography>
+                    </Grid>
+                    <Grid item xs={6} textAlign="right">
+                      <Typography variant="body1" fontWeight={600}>
+                        {(selectedInvoice.total_ht || 0).toLocaleString('fr-DZ')} DA
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        TVA {selectedInvoice.total_ht > 0 ? `(${((selectedInvoice.total_tva || 0) / selectedInvoice.total_ht * 100).toFixed(0)}%)` : ''}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6} textAlign="right">
+                      <Typography variant="body1" fontWeight={600}>
+                        {(selectedInvoice.total_tva || 0).toLocaleString('fr-DZ')} DA
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 1 }} />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="h6" sx={{ color: '#10b981' }}>Total TTC</Typography>
+                    </Grid>
+                    <Grid item xs={6} textAlign="right">
+                      <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 700 }}>
+                        {(selectedInvoice.total_ttc || 0).toLocaleString('fr-DZ')} DA
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+
+              {/* Notes */}
+              {selectedInvoice.notes && (
+                <Grid item xs={12}>
+                  <Paper sx={{ p: 2, bgcolor: '#fef3c7' }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>Notes</Typography>
+                    <Typography variant="body1">{selectedInvoice.notes}</Typography>
+                  </Paper>
+                </Grid>
+              )}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+          <Button 
+            onClick={() => handleDeleteInvoice(selectedInvoice?.id || 0, selectedInvoice?.invoice_number || '')}
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+          >
+            Supprimer
+          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button onClick={handleCloseDetails} variant="outlined">
+              Fermer
+            </Button>
+            <Button
+              onClick={() => handleDownloadPDF(selectedInvoice?.id || 0)}
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}
+            >
+              Télécharger PDF
+            </Button>
+            <Button
+              onClick={() => {
+                handleCloseDetails();
+                handleOpenDialog(selectedInvoice || undefined);
+              }}
+              variant="contained"
+              startIcon={<EditIcon />}
+              sx={{ bgcolor: '#f59e0b', '&:hover': { bgcolor: '#d97706' } }}
+            >
+              Modifier
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

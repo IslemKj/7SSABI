@@ -1,7 +1,7 @@
 """
 Routes pour la gestion des factures
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -9,6 +9,7 @@ from typing import List
 from decimal import Decimal
 from datetime import date, datetime
 import os
+import json
 
 from ..database import get_db
 from ..models import User, Invoice, InvoiceItem, Client, Product
@@ -119,13 +120,32 @@ def create_invoice(
     
     # Calculer les totaux
     total_ht = Decimal(0)
-    for item in invoice_data.items:
-        total_ht += item.unit_price * item.quantity
+    total_tva = Decimal(0)
     
-    tva_amount = total_ht * (invoice_data.tva_rate / 100)
-    total_ttc = total_ht + tva_amount
+    for item in invoice_data.items:
+        item_total = Decimal(str(item.unit_price)) * Decimal(str(item.quantity))
+        total_ht += item_total
+        
+        # Calculer la TVA de chaque ligne si tva_rate est fourni
+        if hasattr(item, 'tva_rate') and item.tva_rate is not None:
+            item_tva = item_total * (Decimal(str(item.tva_rate)) / Decimal(100))
+            total_tva += item_tva
+    
+    total_ttc = total_ht + total_tva
+    
+    # Déterminer le tva_rate global (pour compatibilité avec le modèle)
+    # On utilise le taux du premier item ou le taux par défaut de invoice_data
+    global_tva_rate = Decimal(19)  # Défaut
+    if hasattr(invoice_data, 'tva_rate') and invoice_data.tva_rate is not None:
+        global_tva_rate = Decimal(str(invoice_data.tva_rate))
+    elif invoice_data.items and hasattr(invoice_data.items[0], 'tva_rate') and invoice_data.items[0].tva_rate is not None:
+        global_tva_rate = Decimal(str(invoice_data.items[0].tva_rate))
     
     # Créer la facture
+    # Déterminer le statut par défaut selon le type (devis ou facture)
+    default_status = 'draft' if invoice_data.is_quote else 'unpaid'
+    invoice_status = invoice_data.status if hasattr(invoice_data, 'status') and invoice_data.status else default_status
+    
     invoice = Invoice(
         user_id=current_user.id,
         client_id=invoice_data.client_id,
@@ -133,11 +153,12 @@ def create_invoice(
         date=invoice_data.date,
         due_date=invoice_data.due_date,
         total_ht=total_ht,
-        tva_rate=invoice_data.tva_rate,
-        tva_amount=tva_amount,
+        tva_rate=global_tva_rate,
+        tva_amount=total_tva,
         total_ttc=total_ttc,
         notes=invoice_data.notes,
-        is_quote=invoice_data.is_quote
+        is_quote=invoice_data.is_quote,
+        status=invoice_status
     )
     
     db.add(invoice)
@@ -145,14 +166,14 @@ def create_invoice(
     
     # Créer les lignes de facture
     for item_data in invoice_data.items:
-        total_item = item_data.unit_price * item_data.quantity
+        total_item = Decimal(str(item_data.unit_price)) * Decimal(str(item_data.quantity))
         
         item = InvoiceItem(
             invoice_id=invoice.id,
             product_id=item_data.product_id,
             description=item_data.description,
             quantity=item_data.quantity,
-            unit_price=item_data.unit_price,
+            unit_price=Decimal(str(item_data.unit_price)),
             total=total_item
         )
         db.add(item)
@@ -164,15 +185,31 @@ def create_invoice(
 
 
 @router.put("/{invoice_id}", response_model=InvoiceResponse)
-def update_invoice(
+async def update_invoice(
     invoice_id: int,
-    invoice_data: InvoiceUpdate,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Mettre à jour une facture
     """
+    # Lire le body brut pour voir ce qui est envoyé
+    body = await request.json()
+    print(f"📥 Body brut reçu pour facture {invoice_id}:")
+    print(json.dumps(body, indent=2, ensure_ascii=False))
+    
+    # Essayer de parser avec InvoiceUpdate
+    try:
+        invoice_data = InvoiceUpdate(**body)
+        print(f"✅ Parsing réussi!")
+    except Exception as e:
+        print(f"❌ Erreur parsing: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Erreur de validation: {str(e)}"
+        )
+    
     invoice = db.query(Invoice).filter(
         Invoice.id == invoice_id,
         Invoice.user_id == current_user.id
@@ -184,10 +221,30 @@ def update_invoice(
             detail="Facture non trouvée"
         )
     
-    # Mettre à jour les champs
-    update_data = invoice_data.model_dump(exclude_unset=True)
+    # Mettre à jour les champs (sauf items qui sera géré séparément)
+    update_data = invoice_data.model_dump(exclude_unset=True, exclude={'items'})
     for field, value in update_data.items():
         setattr(invoice, field, value)
+    
+    # Gérer la mise à jour des items si fournis
+    if invoice_data.items is not None:
+        # Supprimer les anciens items
+        db.query(InvoiceItem).filter(InvoiceItem.invoice_id == invoice_id).delete()
+        
+        # Ajouter les nouveaux items
+        for item_data in invoice_data.items:
+            # Calculer le total pour cette ligne
+            total = item_data.quantity * item_data.unit_price
+            
+            item = InvoiceItem(
+                invoice_id=invoice_id,
+                product_id=item_data.product_id,
+                description=item_data.description,
+                quantity=item_data.quantity,
+                unit_price=item_data.unit_price,
+                total=total
+            )
+            db.add(item)
     
     db.commit()
     db.refresh(invoice)

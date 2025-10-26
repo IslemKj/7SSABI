@@ -3,7 +3,8 @@ Schémas Pydantic pour la validation des données
 """
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import datetime
+from datetime import date as date_type
 from decimal import Decimal
 
 
@@ -106,10 +107,15 @@ class ProductUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
-class ProductResponse(ProductBase):
+class ProductResponse(BaseModel):
     """Schéma de réponse produit"""
     id: int
     user_id: int
+    name: str
+    description: Optional[str] = None
+    price: Decimal = Field(alias='unit_price')
+    tva_rate: Decimal
+    category: str
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -142,8 +148,8 @@ class InvoiceItemResponse(InvoiceItemBase):
 class InvoiceBase(BaseModel):
     """Schéma de base facture"""
     client_id: int
-    date: date
-    due_date: Optional[date] = None
+    date: date_type
+    due_date: Optional[date_type] = None
     tva_rate: Decimal = Field(default=19.0, ge=0, le=100)
     notes: Optional[str] = None
     is_quote: bool = False
@@ -152,16 +158,23 @@ class InvoiceBase(BaseModel):
 class InvoiceCreate(InvoiceBase):
     """Schéma pour créer une facture"""
     items: List[InvoiceItemCreate]
+    status: Optional[str] = Field(default="unpaid")
 
 
 class InvoiceUpdate(BaseModel):
     """Schéma pour mettre à jour une facture"""
     client_id: Optional[int] = None
-    date: Optional[date] = None
-    due_date: Optional[date] = None
+    invoice_number: Optional[str] = None
+    date: Optional[date_type] = None
+    due_date: Optional[date_type] = None
     status: Optional[str] = None
     paid_amount: Optional[Decimal] = None
     notes: Optional[str] = None
+    total_ht: Optional[Decimal] = None
+    total_tva: Optional[Decimal] = None
+    total_ttc: Optional[Decimal] = None
+    is_quote: Optional[bool] = None
+    items: Optional[List[InvoiceItemCreate]] = None
 
 
 class InvoiceResponse(InvoiceBase):
@@ -170,7 +183,7 @@ class InvoiceResponse(InvoiceBase):
     user_id: int
     invoice_number: str
     total_ht: Decimal
-    tva_amount: Decimal
+    total_tva: Decimal = Field(alias='tva_amount')
     total_ttc: Decimal
     status: str
     paid_amount: Decimal
@@ -178,7 +191,7 @@ class InvoiceResponse(InvoiceBase):
     items: List[InvoiceItemResponse]
     created_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # ========== EXPENSE SCHEMAS ==========
@@ -186,7 +199,7 @@ class ExpenseBase(BaseModel):
     """Schéma de base dépense"""
     category: str = Field(..., min_length=1, max_length=100)
     amount: Decimal = Field(..., gt=0)
-    date: date
+    date: date_type
     description: Optional[str] = None
 
 
@@ -199,7 +212,7 @@ class ExpenseUpdate(BaseModel):
     """Schéma pour mettre à jour une dépense"""
     category: Optional[str] = None
     amount: Optional[Decimal] = Field(None, gt=0)
-    date: Optional[date] = None
+    date: Optional[date_type] = None
     description: Optional[str] = None
 
 

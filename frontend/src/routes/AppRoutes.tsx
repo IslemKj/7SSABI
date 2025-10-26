@@ -7,6 +7,7 @@ import Layout from '@/components/layout/Layout';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import Dashboard from '@/pages/Dashboard';
+import DashboardAnalytics from '@/pages/dashboard/DashboardAnalytics';
 import ClientsPage from '@/pages/clients/ClientsPage';
 import ProductsPage from '@/pages/products/ProductsPage';
 import InvoicesPage from '@/pages/invoices/InvoicesPage';
@@ -49,6 +50,7 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="analytics" element={<DashboardAnalytics />} />
         <Route path="clients" element={<ClientsPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="invoices" element={<InvoicesPage />} />

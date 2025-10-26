@@ -14,7 +14,7 @@ export const expenseService = {
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
     
-    const response = await api.get<Expense[]>('/api/expenses', { params });
+    const response = await api.get<Expense[]>('/api/expenses/', { params });
     return response.data;
   },
 
@@ -22,7 +22,7 @@ export const expenseService = {
    * Récupérer une dépense par ID
    */
   async getById(id: number): Promise<Expense> {
-    const response = await api.get<Expense>(`/api/expenses/${id}`);
+    const response = await api.get<Expense>(`/api/expenses/${id}/`);
     return response.data;
   },
 
@@ -30,7 +30,7 @@ export const expenseService = {
    * Créer une dépense
    */
   async create(data: ExpenseFormData): Promise<Expense> {
-    const response = await api.post<Expense>('/api/expenses', data);
+    const response = await api.post<Expense>('/api/expenses/', data);
     return response.data;
   },
 
@@ -38,7 +38,7 @@ export const expenseService = {
    * Mettre à jour une dépense
    */
   async update(id: number, data: Partial<ExpenseFormData>): Promise<Expense> {
-    const response = await api.put<Expense>(`/api/expenses/${id}`, data);
+    const response = await api.put<Expense>(`/api/expenses/${id}/`, data);
     return response.data;
   },
 
@@ -46,14 +46,14 @@ export const expenseService = {
    * Supprimer une dépense
    */
   async delete(id: number): Promise<void> {
-    await api.delete(`/api/expenses/${id}`);
+    await api.delete(`/api/expenses/${id}/`);
   },
 
   /**
    * Récupérer les catégories de dépenses
    */
   async getCategories(): Promise<string[]> {
-    const response = await api.get<string[]>('/api/expenses/categories/list');
+    const response = await api.get<string[]>('/api/expenses/categories/list/');
     return response.data;
   },
 };

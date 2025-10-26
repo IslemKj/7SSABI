@@ -13,7 +13,7 @@ export const invoiceService = {
     if (status) params.status = status;
     if (isQuote !== undefined) params.is_quote = isQuote;
     
-    const response = await api.get<Invoice[]>('/api/invoices', { params });
+    const response = await api.get<Invoice[]>('/api/invoices/', { params });
     return response.data;
   },
 
@@ -21,7 +21,7 @@ export const invoiceService = {
    * Récupérer une facture par ID
    */
   async getById(id: number): Promise<Invoice> {
-    const response = await api.get<Invoice>(`/api/invoices/${id}`);
+    const response = await api.get<Invoice>(`/api/invoices/${id}/`);
     return response.data;
   },
 
@@ -29,7 +29,7 @@ export const invoiceService = {
    * Créer une facture
    */
   async create(data: InvoiceFormData): Promise<Invoice> {
-    const response = await api.post<Invoice>('/api/invoices', data);
+    const response = await api.post<Invoice>('/api/invoices/', data);
     return response.data;
   },
 
@@ -37,7 +37,7 @@ export const invoiceService = {
    * Mettre à jour une facture
    */
   async update(id: number, data: Partial<InvoiceFormData>): Promise<Invoice> {
-    const response = await api.put<Invoice>(`/api/invoices/${id}`, data);
+    const response = await api.put<Invoice>(`/api/invoices/${id}/`, data);
     return response.data;
   },
 
@@ -45,14 +45,14 @@ export const invoiceService = {
    * Supprimer une facture
    */
   async delete(id: number): Promise<void> {
-    await api.delete(`/api/invoices/${id}`);
+    await api.delete(`/api/invoices/${id}/`);
   },
 
   /**
    * Télécharger le PDF d'une facture
    */
   async downloadPDF(id: number): Promise<Blob> {
-    const response = await api.get(`/api/invoices/${id}/pdf`, {
+    const response = await api.get(`/api/invoices/${id}/pdf/`, {
       responseType: 'blob',
     });
     return response.data;
@@ -62,7 +62,7 @@ export const invoiceService = {
    * Convertir un devis en facture
    */
   async convertToInvoice(quoteId: number): Promise<Invoice> {
-    const response = await api.post<Invoice>(`/api/invoices/${quoteId}/convert-to-invoice`);
+    const response = await api.post<Invoice>(`/api/invoices/${quoteId}/convert-to-invoice/`);
     return response.data;
   },
 };
