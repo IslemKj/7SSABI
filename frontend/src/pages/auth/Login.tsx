@@ -141,15 +141,15 @@ const Login = () => {
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                     }}
                   >
-                    <Typography
+                    <Box
+                      component="img"
+                      src="/profile.png"
+                      alt="Involeo"
                       sx={{
-                        fontSize: '2rem',
-                        fontWeight: 900,
-                        color: 'white',
+                        width: 40,
+                        height: 40,
                       }}
-                    >
-                      7
-                    </Typography>
+                    />
                   </Box>
                   <Typography
                     variant="h3"
@@ -158,7 +158,7 @@ const Login = () => {
                       fontSize: { xs: '2rem', md: '2.5rem' },
                     }}
                   >
-                    7SSABI
+                    Involeo
                   </Typography>
                 </Box>
                 <Typography
@@ -452,6 +452,24 @@ const Login = () => {
                   >
                     Se connecter
                   </Button>
+
+                  <Box sx={{ textAlign: 'center', mt: 2 }}>
+                    <Link
+                      component={RouterLink}
+                      to="/forgot-password"
+                      sx={{
+                        color: '#667eea',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        fontSize: '0.9375rem',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      Mot de passe oublié ?
+                    </Link>
+                  </Box>
 
                   <Divider sx={{ my: 3 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>

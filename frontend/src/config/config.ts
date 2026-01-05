@@ -4,9 +4,9 @@
 
 export const config = {
   apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-  appName: import.meta.env.VITE_APP_NAME || '7SSABI',
-  tokenKey: '7ssabi_token',
-  userKey: '7ssabi_user',
+  appName: import.meta.env.VITE_APP_NAME || 'Involeo',
+  tokenKey: 'involeo_token',
+  userKey: 'involeo_user',
   
   // TVA rates for Algeria
   tvaRates: [

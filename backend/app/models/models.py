@@ -17,18 +17,26 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     entreprise_name = Column(String(200))
     nif = Column(String(50))  # Numéro d'Identification Fiscale
+    rc_number = Column(String(50))  # Numéro de Registre de Commerce ou Carte Auto-entrepreneur
     address = Column(Text)
     phone = Column(String(20))
     logo_url = Column(String(255))
+    role = Column(String(20), default="user")  # 'user' or 'admin'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     is_active = Column(Boolean, default=True)
+    
+    # Subscription fields
+    subscription_plan = Column(String(50), default="free")  # 'free', 'professional', 'business'
+    subscription_status = Column(String(20), default="active")  # 'active', 'cancelled', 'expired'
+    subscription_started_at = Column(DateTime(timezone=True))
     
     # Relations
     clients = relationship("Client", back_populates="user", cascade="all, delete-orphan")
     products = relationship("Product", back_populates="user", cascade="all, delete-orphan")
     invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
     expenses = relationship("Expense", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
 
 
 class Client(Base):
@@ -43,6 +51,7 @@ class Client(Base):
     email = Column(String(100))
     address = Column(Text)
     nif = Column(String(50))  # NIF du client
+    rc_number = Column(String(50))  # Numéro de Registre de Commerce du client
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -60,6 +69,7 @@ class Product(Base):
     name = Column(String(200), nullable=False)
     description = Column(Text)
     unit_price = Column(Numeric(10, 2), nullable=False)
+    currency = Column(String(3), default="EUR", nullable=False)  # EUR, GBP, USD
     tva_rate = Column(Numeric(5, 2), default=19.0, nullable=False)  # Taux TVA en %
     category = Column(String(100))
     stock = Column(Integer, default=0)
@@ -82,6 +92,10 @@ class Invoice(Base):
     invoice_number = Column(String(50), unique=True, nullable=False, index=True)
     date = Column(Date, nullable=False)
     due_date = Column(Date)
+    currency = Column(String(3), default="EUR", nullable=False)  # EUR, GBP, USD, DZD
+    language = Column(String(2), default="fr", nullable=False)  # fr, en
+    exchange_rate = Column(Numeric(12, 4), default=1, nullable=False)  # Taux de change vers DZD
+    total_dzd = Column(Numeric(18, 2), default=0, nullable=False)  # Total TTC converti en DZD
     total_ht = Column(Numeric(10, 2), nullable=False)  # Total Hors Taxes
     tva_rate = Column(Numeric(5, 2), default=19.0)  # Taux de TVA (19%, 9%, 0%)
     tva_amount = Column(Numeric(10, 2), default=0.0)  # Montant TVA
@@ -133,3 +147,35 @@ class Expense(Base):
     
     # Relations
     user = relationship("User", back_populates="expenses")
+
+
+class Notification(Base):
+    """Modèle de notification"""
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String(50), nullable=False)  # invoice_created, invoice_paid, quote_created, etc.
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    link = Column(String(255))  # Optional link to related entity
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relations
+    user = relationship("User", back_populates="notifications")
+
+
+class PasswordResetToken(Base):
+    """Modèle pour les tokens de réinitialisation de mot de passe"""
+    __tablename__ = "password_reset_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relations
+    user = relationship("User")

@@ -66,13 +66,25 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
   const [status, setStatus] = useState<'draft' | 'unpaid' | 'paid' | 'partial' | 'cancelled'>(
     isQuote ? 'draft' : 'unpaid'
   );
+  const [currency, setCurrency] = useState('EUR');
+  const [exchangeRate, setExchangeRate] = useState<number | ''>('');
+  const [language, setLanguage] = useState('fr');
   const [items, setItems] = useState<InvoiceItem[]>([
     { description: '', quantity: 1, unit_price: 0, tva_rate: 19, subtotal: 0 }
   ]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Charger les données (clients et produits) quand le dialog s'ouvre
+  // Utilitaire pour symbole de devise
+  const getCurrencySymbol = (cur: string) => {
+    switch (cur) {
+      case 'EUR': return '€';
+      case 'USD': return '$';
+      case 'GBP': return '£';
+      case 'DZD': return 'DA';
+      default: return cur;
+    }
+  };
   useEffect(() => {
     if (open) {
       loadData();
@@ -92,6 +104,9 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
       setInvoiceNumber(invoice.invoice_number);
       setDate(invoice.date);
       setDueDate(invoice.due_date || '');
+      setCurrency(invoice.currency || 'EUR');
+      setExchangeRate(invoice.exchange_rate ?? '');
+      setLanguage(invoice.language || 'fr');
       setStatus(invoice.status);
       setNotes(invoice.notes || '');
       
@@ -110,7 +125,7 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
               description: item.description,
               quantity: item.quantity,
               unit_price: Number(item.unit_price),
-              tva_rate: 19, // Valeur par défaut
+              tva_rate: item.tva_rate || 19,
               subtotal: Number(item.total),
             };
           })
@@ -121,19 +136,27 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
       generateInvoiceNumber();
       // Réinitialiser les items si c'est une nouvelle facture
       setItems([{ description: '', quantity: 1, unit_price: 0, tva_rate: 19, subtotal: 0 }]);
+      setExchangeRate('');
     }
   }, [invoice, products, clients, open]);
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [clientsData, productsData] = await Promise.all([
-        clientService.getAll(),
-        productService.getAll(),
+        clientService.getAll(1, 100), // Max 100 items per request
+        productService.getAll(1, 100), // Max 100 items per request
       ]);
-      setClients(clientsData);
-      setProducts(productsData);
+      console.log('Clients loaded:', clientsData);
+      console.log('Products loaded:', productsData);
+      setClients(clientsData.items || []);
+      setProducts(productsData.items || []);
     } catch (error) {
       console.error('Erreur chargement données:', error);
+      setClients([]);
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -175,7 +198,7 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
         product_id: product.id,
         product: product,
         description: product.name,
-        unit_price: product.price,
+        unit_price: product.unit_price,
         tva_rate: product.tva_rate,
       };
       
@@ -216,6 +239,12 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
       return;
     }
 
+    // Si la devise n'est pas DZD, le taux de change est requis
+    if (currency !== 'DZD' && (!exchangeRate || isNaN(Number(exchangeRate)))) {
+      alert('Veuillez saisir le taux de change pour convertir en DZD');
+      return;
+    }
+
     const { totalHT, totalTVA, totalTTC } = calculateTotals();
 
     try {
@@ -226,17 +255,21 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
         invoice_number: invoiceNumber,
         date: date,
         due_date: dueDate || undefined,
+        currency: currency,
+        language: language,
         status: status,
         is_quote: isQuote,
         notes: notes || undefined,
         total_ht: Number(totalHT),
         total_tva: Number(totalTVA),
         total_ttc: Number(totalTTC),
+        exchange_rate: currency === 'DZD' ? 1 : Number(exchangeRate),
         items: items.map(item => ({
           product_id: item.product_id || undefined,
           description: item.description,
           quantity: Number(item.quantity),
           unit_price: Number(item.unit_price),
+          tva_rate: Number(item.tva_rate),
         })),
       };
 
@@ -295,6 +328,8 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
               options={clients}
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(option, value) => option.id === value.id}
+              loading={loading}
+              noOptionsText={loading ? "Chargement..." : "Aucun client trouvé"}
               renderInput={(params) => (
                 <TextField {...params} label="Client *" fullWidth />
               )}
@@ -334,7 +369,56 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
             />
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Devise</InputLabel>
+              <Select
+                value={currency}
+                onChange={(e) => {
+                  setCurrency(e.target.value);
+                  if (e.target.value === 'DZD') setExchangeRate('');
+                }}
+                label="Devise"
+              >
+                <MenuItem value="EUR">€ Euro (EUR)</MenuItem>
+                <MenuItem value="GBP">£ Livre Sterling (GBP)</MenuItem>
+                <MenuItem value="USD">$ Dollar US (USD)</MenuItem>
+                <MenuItem value="DZD">DA Dinar Algérien (DZD)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Exchange Rate Field (if not DZD) */}
+          {currency !== 'DZD' && (
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Taux de change vers DZD"
+                type="number"
+                value={exchangeRate}
+                onChange={e => setExchangeRate(e.target.value === '' ? '' : Number(e.target.value))}
+                fullWidth
+                required
+                inputProps={{ min: 0, step: 0.0001 }}
+                helperText="Obligatoire si la devise n'est pas DZD"
+              />
+            </Grid>
+          )}
+
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Langue</InputLabel>
+              <Select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                label="Langue"
+              >
+                <MenuItem value="fr">🇫🇷 Français</MenuItem>
+                <MenuItem value="en">🇬🇧 English</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid item xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Statut</InputLabel>
               <Select
@@ -435,7 +519,7 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body2" fontWeight={600}>
-                        {item.subtotal.toLocaleString('fr-DZ', { minimumFractionDigits: 2 })} DA
+                        {item.subtotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} {getCurrencySymbol(currency)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -460,17 +544,17 @@ const InvoiceForm = ({ open, onClose, onSave, invoice, isQuote = false }: Invoic
           <Box sx={{ width: 300 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography>Total HT:</Typography>
-              <Typography fontWeight={600}>{totalHT.toLocaleString('fr-DZ', { minimumFractionDigits: 2 })} DA</Typography>
+              <Typography fontWeight={600}>{totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} {getCurrencySymbol(currency)}</Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography>Total TVA:</Typography>
-              <Typography fontWeight={600}>{totalTVA.toLocaleString('fr-DZ', { minimumFractionDigits: 2 })} DA</Typography>
+              <Typography fontWeight={600}>{totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} {getCurrencySymbol(currency)}</Typography>
             </Box>
             <Divider sx={{ my: 1 }} />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="h6">Total TTC:</Typography>
               <Typography variant="h6" color="primary" fontWeight={700}>
-                {totalTTC.toLocaleString('fr-DZ', { minimumFractionDigits: 2 })} DA
+                {totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} {getCurrencySymbol(currency)}
               </Typography>
             </Box>
           </Box>

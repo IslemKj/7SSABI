@@ -2,18 +2,18 @@
  * Service Factures
  */
 import api from './api';
-import type { Invoice, InvoiceFormData } from '@/types';
+import type { Invoice, InvoiceFormData, PaginatedResponse } from '@/types';
 
 export const invoiceService = {
   /**
-   * Récupérer toutes les factures
+   * Récupérer toutes les factures avec pagination
    */
-  async getAll(status?: string, isQuote?: boolean): Promise<Invoice[]> {
-    const params: any = {};
+  async getAll(page: number = 1, pageSize: number = 10, status?: string, isQuote?: boolean): Promise<PaginatedResponse<Invoice>> {
+    const params: any = { page, page_size: pageSize };
     if (status) params.status = status;
     if (isQuote !== undefined) params.is_quote = isQuote;
     
-    const response = await api.get<Invoice[]>('/api/invoices/', { params });
+    const response = await api.get<PaginatedResponse<Invoice>>('/api/invoices/', { params });
     return response.data;
   },
 

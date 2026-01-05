@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService } from '@/services/authService';
+import { userService } from '@/services/userService';
 import type { User, LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthState {
@@ -16,6 +17,7 @@ interface AuthState {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  loadUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,11 +34,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { user, token } = await authService.login(credentials);
           set({
-            user,
             token,
             isAuthenticated: true,
             isLoading: false,
           });
+          // Fetch full user data
+          const userData = await userService.getMe();
+          set({ user: userData });
         } catch (error: any) {
           const message = error.response?.data?.detail || 'Erreur de connexion';
           set({
@@ -67,6 +71,15 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isAuthenticated: false,
         });
+      },
+
+      loadUser: async () => {
+        try {
+          const userData = await userService.getMe();
+          set({ user: userData });
+        } catch (error) {
+          console.error('Failed to load user data:', error);
+        }
       },
 
       clearError: () => set({ error: null }),

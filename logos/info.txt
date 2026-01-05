@@ -1,0 +1,18 @@
+
+Hope you enjoy your new logo, here are the people that
+made your beautiful logo happen :)
+font name: GlacialIndifference-Bold
+font link: https://hanken.co/product/hk-grotesk/
+font author: Hanken Design Co.
+font author site: https://hanken.co/
+
+
+icon designer: Gregor Cresnar
+icon designer link: /creator/grega.cresnar/
+        
+
+fontColor: {"hex":"#FFFFFF"}
+bgColor: {"hex":"#523880"}
+iconColor: {"hex":"#757CCE"}
+
+      

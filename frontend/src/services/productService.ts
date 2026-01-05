@@ -2,25 +2,29 @@
  * Service Produits
  */
 import api from './api';
-import type { Product, ProductFormData } from '@/types';
+import type { Product, ProductFormData, PaginatedResponse } from '@/types';
 
 /**
  * Convertir les valeurs string en number pour price et tva_rate
  */
 const normalizeProduct = (product: any): Product => ({
   ...product,
-  price: Number(product.price) || 0,
+  unit_price: Number(product.unit_price) || 0,
   tva_rate: Number(product.tva_rate) || 0,
 });
 
 export const productService = {
   /**
-   * Récupérer tous les produits
+   * Récupérer tous les produits avec pagination
    */
-  async getAll(category?: string): Promise<Product[]> {
-    const params = category ? { category } : {};
-    const response = await api.get<Product[]>('/api/products/', { params });
-    return response.data.map(normalizeProduct);
+  async getAll(page: number = 1, pageSize: number = 10, category?: string): Promise<PaginatedResponse<Product>> {
+    const params: any = { page, page_size: pageSize };
+    if (category) params.category = category;
+    const response = await api.get<PaginatedResponse<Product>>('/api/products/', { params });
+    return {
+      ...response.data,
+      items: response.data.items.map(normalizeProduct)
+    };
   },
 
   /**

@@ -1,37 +1,49 @@
 """
 Routes pour la gestion des produits/services
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
+import math
 
 from ..database import get_db
 from ..models import User, Product
-from ..schemas import ProductCreate, ProductUpdate, ProductResponse
+from ..schemas import ProductCreate, ProductUpdate, ProductResponse, PaginatedResponse
 from ..utils.auth import get_current_user
+from ..utils.notifications import create_product_notification
 
 router = APIRouter(prefix="/api/products", tags=["Products"])
 
 
-@router.get("/", response_model=List[ProductResponse])
+@router.get("/", response_model=PaginatedResponse[ProductResponse])
 def get_products(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     category: str = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Récupérer la liste des produits/services
+    Récupérer la liste des produits/services avec pagination
     """
+    skip = (page - 1) * page_size
+    
     query = db.query(Product).filter(Product.user_id == current_user.id)
     
     if category:
         query = query.filter(Product.category == category)
     
-    products = query.offset(skip).limit(limit).all()
+    total = query.count()
+    products = query.offset(skip).limit(page_size).all()
+    total_pages = math.ceil(total / page_size) if total > 0 else 0
     
-    return products
+    return {
+        "items": products,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
@@ -71,17 +83,18 @@ def create_product(
     
     # DEBUG: Afficher les données reçues
     print(f"DEBUG - Données reçues: {product_dict}")
-    print(f"DEBUG - Price value: {product_dict.get('price')} (type: {type(product_dict.get('price'))})")
+    print(f"DEBUG - Unit price value: {product_dict.get('unit_price')} (type: {type(product_dict.get('unit_price'))})")
     
     # Mapper les champs
     db_data = {
         'name': product_dict['name'],
         'description': product_dict.get('description'),
-        'unit_price': product_dict.get('price', 0),
+        'unit_price': product_dict.get('unit_price', 0),
+        'currency': product_dict.get('currency', 'EUR'),
         'tva_rate': product_dict.get('tva_rate', 19),
         'category': product_dict.get('category', 'produit'),
         'is_service': product_dict.get('category') == 'service',
-        'stock': 0,  # Par défaut
+        'stock': product_dict.get('stock', 0) if product_dict.get('category') == 'produit' else 0,
         'user_id': current_user.id
     }
     
@@ -92,6 +105,13 @@ def create_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+    
+    # Créer une notification
+    create_product_notification(
+        db=db,
+        user_id=current_user.id,
+        product_name=product.name
+    )
     
     print(f"DEBUG - Product created: id={product.id}, unit_price={product.unit_price}")
     
@@ -124,10 +144,10 @@ def update_product(
     
     # DEBUG: Afficher les données de mise à jour
     print(f"DEBUG UPDATE - Données reçues: {update_dict}")
-    print(f"DEBUG UPDATE - Price value: {update_dict.get('price')} (type: {type(update_dict.get('price'))})")
-    
-    if 'price' in update_dict:
-        product.unit_price = update_dict['price']
+    print(f"DEBUG UPDATE - Unit price value: {update_dict.get('unit_price')} (type: {type(update_dict.get('unit_price'))})")
+
+    if 'unit_price' in update_dict:
+        product.unit_price = update_dict['unit_price']
     if 'name' in update_dict:
         product.name = update_dict['name']
     if 'description' in update_dict:
@@ -137,10 +157,14 @@ def update_product(
     if 'category' in update_dict:
         product.category = update_dict['category']
         product.is_service = update_dict['category'] == 'service'
+    if 'currency' in update_dict:
+        product.currency = update_dict['currency']
+    if 'stock' in update_dict:
+        product.stock = update_dict['stock'] if product.category == 'produit' else 0
     
     db.commit()
     db.refresh(product)
-    
+    print(f"DEBUG AFTER COMMIT - Product id={product.id}, unit_price={product.unit_price}")
     return product
 
 

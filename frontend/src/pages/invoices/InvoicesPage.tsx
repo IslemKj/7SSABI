@@ -1,199 +1,12 @@
-// /**
-//  * Page Factures
-//  */
-// import { useState, useEffect } from 'react';
-// import {
-//   Box,
-//   Button,
-//   Paper,
-//   Typography,
-//   IconButton,
-//   CircularProgress,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Chip,
-//   Tabs,
-//   Tab,
-// } from '@mui/material';
-// import { 
-//   Add as AddIcon, 
-//   Visibility as ViewIcon, 
-//   Download as DownloadIcon,
-//   Edit as EditIcon,
-// } from '@mui/icons-material';
-// import { invoiceService } from '@/services/invoiceService';
-// import type { Invoice } from '@/types';
-// import { format } from 'date-fns';
-// import { fr } from 'date-fns/locale';
-
-// const InvoicesPage = () => {
-//   const [invoices, setInvoices] = useState<Invoice[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [tabValue, setTabValue] = useState(0);
-
-//   useEffect(() => {
-//     loadInvoices();
-//   }, [tabValue]);
-
-//   const loadInvoices = async () => {
-//     try {
-//       const isQuote = tabValue === 1;
-//       const data = await invoiceService.getAll(undefined, isQuote);
-//       setInvoices(data);
-//     } catch (error) {
-//       console.error('Erreur chargement factures:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleDownloadPDF = async (id: number) => {
-//     try {
-//       const blob = await invoiceService.downloadPDF(id);
-//       const url = window.URL.createObjectURL(blob);
-//       const link = document.createElement('a');
-//       link.href = url;
-//       link.download = `facture-${id}.pdf`;
-//       link.click();
-//       window.URL.revokeObjectURL(url);
-//     } catch (error) {
-//       console.error('Erreur téléchargement PDF:', error);
-//     }
-//   };
-
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case 'paid':
-//         return 'success';
-//       case 'unpaid':
-//         return 'error';
-//       case 'partial':
-//         return 'warning';
-//       case 'cancelled':
-//         return 'default';
-//       default:
-//         return 'default';
-//     }
-//   };
-
-//   const getStatusLabel = (status: string) => {
-//     const labels: Record<string, string> = {
-//       paid: 'Payée',
-//       unpaid: 'Non payée',
-//       partial: 'Partielle',
-//       cancelled: 'Annulée',
-//     };
-//     return labels[status] || status;
-//   };
-
-//   if (loading) {
-//     return (
-//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-//         <CircularProgress />
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <Box>
-//       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-//         <Typography variant="h4">Factures & Devis</Typography>
-//         <Button
-//           variant="contained"
-//           startIcon={<AddIcon />}
-//           onClick={() => alert('Création de facture à venir')}
-//         >
-//           Nouvelle facture
-//         </Button>
-//       </Box>
-
-//       <Paper sx={{ mb: 2 }}>
-//         <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
-//           <Tab label="Factures" />
-//           <Tab label="Devis" />
-//         </Tabs>
-//       </Paper>
-
-//       <TableContainer component={Paper}>
-//         <Table>
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Numéro</TableCell>
-//               <TableCell>Date</TableCell>
-//               <TableCell>Client</TableCell>
-//               <TableCell align="right">Montant HT</TableCell>
-//               <TableCell align="right">TVA</TableCell>
-//               <TableCell align="right">Total TTC</TableCell>
-//               <TableCell>Statut</TableCell>
-//               <TableCell align="right">Actions</TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {invoices.map((invoice) => (
-//               <TableRow key={invoice.id}>
-//                 <TableCell>{invoice.invoice_number}</TableCell>
-//                 <TableCell>
-//                   {format(new Date(invoice.date), 'dd/MM/yyyy', { locale: fr })}
-//                 </TableCell>
-//                 <TableCell>Client #{invoice.client_id}</TableCell>
-//                 <TableCell align="right">{invoice.total_ht.toFixed(2)} DA</TableCell>
-//                 <TableCell align="right">{invoice.tva_amount.toFixed(2)} DA</TableCell>
-//                 <TableCell align="right">{invoice.total_ttc.toFixed(2)} DA</TableCell>
-//                 <TableCell>
-//                   <Chip 
-//                     label={getStatusLabel(invoice.status)} 
-//                     color={getStatusColor(invoice.status) as any}
-//                     size="small"
-//                   />
-//                 </TableCell>
-//                 <TableCell align="right">
-//                   <IconButton size="small" onClick={() => alert('Voir détails')}>
-//                     <ViewIcon />
-//                   </IconButton>
-//                   <IconButton size="small" onClick={() => handleDownloadPDF(invoice.id)}>
-//                     <DownloadIcon />
-//                   </IconButton>
-//                   <IconButton size="small" onClick={() => alert('Modifier facture')}>
-//                     <EditIcon />
-//                   </IconButton>
-//                 </TableCell>
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-
-//       {invoices.length === 0 && (
-//         <Box sx={{ textAlign: 'center', py: 4 }}>
-//           <Typography color="text.secondary">
-//             Aucune {tabValue === 0 ? 'facture' : 'devis'} trouvée
-//           </Typography>
-//         </Box>
-//       )}
-//     </Box>
-//   );
-// };
-
-// export default InvoicesPage;
-
-
-
-
 /**
- * Page Factures - Design Moderne
+ * Page Factures - Design Moderne (Fixed Version)
  */
 import { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Paper,
   Typography,
-  IconButton,
-  CircularProgress,
+  Paper,
   Table,
   TableBody,
   TableCell,
@@ -214,6 +27,8 @@ import {
   DialogContent,
   DialogActions,
   Divider,
+  CircularProgress,
+  IconButton,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -236,8 +51,29 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import InvoiceForm from './InvoiceForm';
 
+
+// Helper pour obtenir le symbole de devise
+const getCurrencySymbol = (currency: string = 'DZD'): string => {
+  const symbols: Record<string, string> = { 
+    'EUR': '€', 
+    'GBP': '£', 
+    'USD': '$', 
+    'DZD': 'DA' 
+  };
+  return symbols[currency] || currency;
+};
+
+// Helper pour obtenir le montant TVA (gère les deux noms de propriété)
+const getTvaAmount = (invoice: Invoice): number => {
+  // @ts-ignore - gère les deux noms possibles
+  return invoice.total_tva ?? invoice.tva_amount ?? 0;
+};
+
 const InvoicesPage = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -245,16 +81,24 @@ const InvoicesPage = () => {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  
+  
+
+  useEffect(() => {
+    setPage(1); // Reset to page 1 when tab changes
+  }, [tabValue]);
 
   useEffect(() => {
     loadInvoices();
-  }, [tabValue]);
+  }, [tabValue, page, pageSize]);
 
   const loadInvoices = async () => {
     try {
+      setLoading(true);
       const isQuote = tabValue === 1;
-      const data = await invoiceService.getAll(undefined, isQuote);
-      setInvoices(data);
+      const data = await invoiceService.getAll(page, pageSize, undefined, isQuote);
+      setInvoices(data.items);
+      setTotal(data.total);
     } catch (error) {
       console.error('Erreur chargement factures:', error);
     } finally {
@@ -286,6 +130,18 @@ const InvoicesPage = () => {
     setSelectedInvoice(null);
   };
 
+
+  const handleConvertToInvoice = async (invoice) => {
+    try {
+      await invoiceService.convertToInvoice(invoice.id);
+      alert('Le devis a été converti en facture avec succès.');
+      await loadInvoices(); // Refresh the list
+    } catch (error) {
+      alert('Erreur lors de la conversion du devis.');
+      console.error(error);
+    }
+  };
+
   const handleDeleteInvoice = async (id: number, invoiceNumber: string) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer la facture ${invoiceNumber} ?\n\nCette action est irréversible.`)) {
       try {
@@ -313,6 +169,7 @@ const InvoicesPage = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Erreur téléchargement PDF:', error);
+      alert('Erreur lors du téléchargement du PDF');
     }
   };
 
@@ -358,12 +215,12 @@ const InvoicesPage = () => {
 
   const filteredInvoices = invoices.filter((invoice) =>
     invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.client_id.toString().includes(searchTerm)
+    invoice.client_id?.toString().includes(searchTerm)
   );
 
   // Statistiques
   const stats = {
-    total: invoices.reduce((sum, inv) => sum + inv.total_ttc, 0),
+    total: invoices.reduce((sum, inv) => sum + (inv.total_ttc || 0), 0),
     paid: invoices.filter(inv => inv.status === 'paid').length,
     unpaid: invoices.filter(inv => inv.status === 'unpaid').length,
     partial: invoices.filter(inv => inv.status === 'partial').length,
@@ -402,7 +259,7 @@ const InvoicesPage = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* En-tête avec gradient */}
       <Box
         sx={{
@@ -460,7 +317,7 @@ const InvoicesPage = () => {
               />
               <Chip
                 icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
-                label={`${stats.total.toLocaleString('fr-DZ')} DA`}
+                label={`${stats.total.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DA`}
                 sx={{
                   bgcolor: 'rgba(255, 255, 255, 0.2)',
                   color: 'white',
@@ -492,7 +349,7 @@ const InvoicesPage = () => {
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
-            Nouvelle facture
+            {tabValue === 0 ? 'Nouvelle facture' : 'Nouveau devis'}
           </Button>
         </Box>
       </Box>
@@ -765,7 +622,9 @@ const InvoicesPage = () => {
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden',
+          overflow: 'auto',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <Table>
@@ -918,7 +777,7 @@ const InvoicesPage = () => {
                       <Button
                         variant="outlined"
                         startIcon={<AddIcon />}
-                        onClick={() => alert('Création de facture à venir')}
+                        onClick={() => handleOpenDialog()}
                         sx={{
                           borderRadius: 2,
                           textTransform: 'none',
@@ -960,7 +819,7 @@ const InvoicesPage = () => {
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     <Chip
-                      label={`Client #${invoice.client_id}`}
+                      label={`Client #${invoice.client_id || 'N/A'}`}
                       size="small"
                       sx={{
                         bgcolor: alpha('#6366f1', 0.1),
@@ -971,17 +830,26 @@ const InvoicesPage = () => {
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                      {(invoice.total_ht || 0).toLocaleString('fr-DZ')} DA
+                      {(invoice.total_ht || 0).toLocaleString('fr-FR', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })} {getCurrencySymbol(invoice.currency)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                      {(invoice.total_tva || 0).toLocaleString('fr-DZ')} DA
+                      {getTvaAmount(invoice).toLocaleString('fr-FR', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })} {getCurrencySymbol(invoice.currency)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
                     <Typography variant="body1" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                      {(invoice.total_ttc || 0).toLocaleString('fr-DZ')} DA
+                      {(invoice.total_ttc || 0).toLocaleString('fr-FR', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })} {getCurrencySymbol(invoice.currency)}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -1045,6 +913,23 @@ const InvoicesPage = () => {
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
+                      {tabValue === 1 && (
+                        <IconButton
+                          onClick={() => handleConvertToInvoice(invoice)}
+                          size="small"
+                          sx={{
+                            bgcolor: alpha('#6366f1', 0.1),
+                            color: '#6366f1',
+                            '&:hover': {
+                              bgcolor: alpha('#6366f1', 0.2),
+                              transform: 'scale(1.1)',
+                            },
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <ReceiptIcon fontSize="small" />
+                        </IconButton>
+                      )}
                       <IconButton
                         onClick={() => handleDeleteInvoice(invoice.id, invoice.invoice_number)}
                         size="small"
@@ -1069,6 +954,48 @@ const InvoicesPage = () => {
         </Table>
       </TableContainer>
 
+      {/* Pagination */}
+      {total > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 3,
+            p: 2,
+            bgcolor: alpha('#6366f1', 0.03),
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, total)} sur {total} {tabValue === 0 ? 'factures' : 'devis'}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Précédent
+            </Button>
+            <Typography variant="body2" sx={{ px: 2 }}>
+              Page {page} sur {Math.ceil(total / pageSize)}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page >= Math.ceil(total / pageSize)}
+              onClick={() => setPage(page + 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Suivant
+            </Button>
+          </Box>
+        </Box>
+      )}
+
       {/* Dialog de création/modification */}
       <InvoiceForm
         open={dialogOpen}
@@ -1080,7 +1007,15 @@ const InvoicesPage = () => {
 
       {/* Dialog des détails */}
       <Dialog open={detailsOpen} onClose={handleCloseDetails} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ bgcolor: '#6366f1', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <DialogTitle 
+          sx={{ 
+            bgcolor: '#6366f1', 
+            color: 'white', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center' 
+          }}
+        >
           <Typography variant="h6">
             Détails {selectedInvoice?.is_quote ? 'du Devis' : 'de la Facture'}
           </Typography>
@@ -1142,15 +1077,33 @@ const InvoicesPage = () => {
                       Client
                     </Typography>
                     <Divider sx={{ mb: 2 }} />
-                    <Typography variant="body1" fontWeight={600}>{selectedInvoice.client.name}</Typography>
-                    {selectedInvoice.client.email && (
-                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.email}</Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {selectedInvoice.client?.name || 'N/A'}
+                    </Typography>
+                    {selectedInvoice.client?.email && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedInvoice.client.email}
+                      </Typography>
                     )}
-                    {selectedInvoice.client.phone && (
-                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.phone}</Typography>
+                    {selectedInvoice.client?.phone && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedInvoice.client.phone}
+                      </Typography>
                     )}
-                    {selectedInvoice.client.address && (
-                      <Typography variant="body2" color="text.secondary">{selectedInvoice.client.address}</Typography>
+                    {selectedInvoice.client?.address && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedInvoice.client.address}
+                      </Typography>
+                    )}
+                    {selectedInvoice.client?.nif && (
+                      <Typography variant="body2" color="text.secondary">
+                        NIF: {selectedInvoice.client.nif}
+                      </Typography>
+                    )}
+                    {selectedInvoice.client?.rc_number && (
+                      <Typography variant="body2" color="text.secondary">
+                        RC/CAE: {selectedInvoice.client.rc_number}
+                      </Typography>
                     )}
                   </Paper>
                 </Grid>
@@ -1179,8 +1132,18 @@ const InvoicesPage = () => {
                             <TableRow key={index}>
                               <TableCell>{item.description}</TableCell>
                               <TableCell align="right">{item.quantity}</TableCell>
-                              <TableCell align="right">{Number(item.unit_price).toLocaleString('fr-DZ')} DA</TableCell>
-                              <TableCell align="right">{Number(item.total).toLocaleString('fr-DZ')} DA</TableCell>
+                              <TableCell align="right">
+                                {Number(item.unit_price || 0).toLocaleString('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })} {getCurrencySymbol(selectedInvoice.currency)}
+                              </TableCell>
+                              <TableCell align="right">
+                                {Number(item.total || 0).toLocaleString('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })} {getCurrencySymbol(selectedInvoice.currency)}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1199,17 +1162,25 @@ const InvoicesPage = () => {
                     </Grid>
                     <Grid item xs={6} textAlign="right">
                       <Typography variant="body1" fontWeight={600}>
-                        {(selectedInvoice.total_ht || 0).toLocaleString('fr-DZ')} DA
+                        {(selectedInvoice.total_ht || 0).toLocaleString('fr-FR', { 
+                          minimumFractionDigits: 2, 
+                          maximumFractionDigits: 2 
+                        })} {getCurrencySymbol(selectedInvoice.currency)}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="body2" color="text.secondary">
-                        TVA {selectedInvoice.total_ht > 0 ? `(${((selectedInvoice.total_tva || 0) / selectedInvoice.total_ht * 100).toFixed(0)}%)` : ''}
+                        TVA {selectedInvoice.total_ht && selectedInvoice.total_ht > 0 
+                          ? `(${((getTvaAmount(selectedInvoice)) / selectedInvoice.total_ht * 100).toFixed(0)}%)` 
+                          : ''}
                       </Typography>
                     </Grid>
                     <Grid item xs={6} textAlign="right">
                       <Typography variant="body1" fontWeight={600}>
-                        {(selectedInvoice.total_tva || 0).toLocaleString('fr-DZ')} DA
+                        {getTvaAmount(selectedInvoice).toLocaleString('fr-FR', { 
+                          minimumFractionDigits: 2, 
+                          maximumFractionDigits: 2 
+                        })} {getCurrencySymbol(selectedInvoice.currency)}
                       </Typography>
                     </Grid>
                     <Grid item xs={12}>
@@ -1220,7 +1191,10 @@ const InvoicesPage = () => {
                     </Grid>
                     <Grid item xs={6} textAlign="right">
                       <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 700 }}>
-                        {(selectedInvoice.total_ttc || 0).toLocaleString('fr-DZ')} DA
+                        {(selectedInvoice.total_ttc || 0).toLocaleString('fr-FR', { 
+                          minimumFractionDigits: 2, 
+                          maximumFractionDigits: 2 
+                        })} {getCurrencySymbol(selectedInvoice.currency)}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -1231,7 +1205,9 @@ const InvoicesPage = () => {
               {selectedInvoice.notes && (
                 <Grid item xs={12}>
                   <Paper sx={{ p: 2, bgcolor: '#fef3c7' }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>Notes</Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Notes
+                    </Typography>
                     <Typography variant="body1">{selectedInvoice.notes}</Typography>
                   </Paper>
                 </Grid>
@@ -1241,7 +1217,10 @@ const InvoicesPage = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
           <Button 
-            onClick={() => handleDeleteInvoice(selectedInvoice?.id || 0, selectedInvoice?.invoice_number || '')}
+            onClick={() => selectedInvoice && handleDeleteInvoice(
+              selectedInvoice.id, 
+              selectedInvoice.invoice_number
+            )}
             variant="outlined"
             color="error"
             startIcon={<DeleteIcon />}
@@ -1253,7 +1232,7 @@ const InvoicesPage = () => {
               Fermer
             </Button>
             <Button
-              onClick={() => handleDownloadPDF(selectedInvoice?.id || 0)}
+              onClick={() => selectedInvoice && handleDownloadPDF(selectedInvoice.id)}
               variant="contained"
               startIcon={<DownloadIcon />}
               sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}

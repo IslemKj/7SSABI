@@ -1,254 +1,3 @@
-// /**
-//  * Page Produits
-//  */
-// import { useState, useEffect } from 'react';
-// import {
-//   Box,
-//   Button,
-//   Paper,
-//   Typography,
-//   Dialog,
-//   DialogTitle,
-//   DialogContent,
-//   DialogActions,
-//   TextField,
-//   IconButton,
-//   CircularProgress,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Select,
-//   MenuItem,
-//   FormControl,
-//   InputLabel,
-// } from '@mui/material';
-// import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-// import { productService } from '@/services/productService';
-// import { config } from '@/config/config';
-// import type { Product, ProductFormData } from '@/types';
-
-// const ProductsPage = () => {
-//   const [products, setProducts] = useState<Product[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [dialogOpen, setDialogOpen] = useState(false);
-//   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-//   const [formData, setFormData] = useState<ProductFormData>({
-//     name: '',
-//     description: '',
-//     category: 'produit',
-//     price: 0,
-//     tva_rate: 19,
-//   });
-
-//   useEffect(() => {
-//     loadProducts();
-//   }, []);
-
-//   const loadProducts = async () => {
-//     try {
-//       const data = await productService.getAll();
-//       setProducts(data);
-//     } catch (error) {
-//       console.error('Erreur chargement produits:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleOpenDialog = (product?: Product) => {
-//     if (product) {
-//       setEditingProduct(product);
-//       setFormData({
-//         name: product.name,
-//         description: product.description || '',
-//         category: product.category,
-//         price: product.price,
-//         tva_rate: product.tva_rate,
-//       });
-//     } else {
-//       setEditingProduct(null);
-//       setFormData({
-//         name: '',
-//         description: '',
-//         category: 'produit',
-//         price: 0,
-//         tva_rate: 19,
-//       });
-//     }
-//     setDialogOpen(true);
-//   };
-
-//   const handleCloseDialog = () => {
-//     setDialogOpen(false);
-//     setEditingProduct(null);
-//   };
-
-//   const handleChange = (e: any) => {
-//     setFormData({
-//       ...formData,
-//       [e.target.name]: e.target.value,
-//     });
-//   };
-
-//   const handleSubmit = async () => {
-//     try {
-//       if (editingProduct) {
-//         await productService.update(editingProduct.id, formData);
-//       } else {
-//         await productService.create(formData);
-//       }
-//       handleCloseDialog();
-//       loadProducts();
-//     } catch (error) {
-//       console.error('Erreur sauvegarde produit:', error);
-//     }
-//   };
-
-//   const handleDelete = async (id: number) => {
-//     if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
-//       try {
-//         await productService.delete(id);
-//         loadProducts();
-//       } catch (error) {
-//         console.error('Erreur suppression produit:', error);
-//       }
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-//         <CircularProgress />
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <Box>
-//       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-//         <Typography variant="h4">Produits & Services</Typography>
-//         <Button
-//           variant="contained"
-//           startIcon={<AddIcon />}
-//           onClick={() => handleOpenDialog()}
-//         >
-//           Nouveau produit
-//         </Button>
-//       </Box>
-
-//       <TableContainer component={Paper}>
-//         <Table>
-//           <TableHead>
-//             <TableRow>
-//               <TableCell>Nom</TableCell>
-//               <TableCell>Catégorie</TableCell>
-//               <TableCell align="right">Prix HT</TableCell>
-//               <TableCell align="right">TVA</TableCell>
-//               <TableCell align="right">Prix TTC</TableCell>
-//               <TableCell align="right">Actions</TableCell>
-//             </TableRow>
-//           </TableHead>
-//           <TableBody>
-//             {products.map((product) => {
-//               const priceTTC = product.price * (1 + product.tva_rate / 100);
-//               return (
-//                 <TableRow key={product.id}>
-//                   <TableCell>{product.name}</TableCell>
-//                   <TableCell>{product.category}</TableCell>
-//                   <TableCell align="right">{product.price.toFixed(2)} DA</TableCell>
-//                   <TableCell align="right">{product.tva_rate}%</TableCell>
-//                   <TableCell align="right">{priceTTC.toFixed(2)} DA</TableCell>
-//                   <TableCell align="right">
-//                     <IconButton onClick={() => handleOpenDialog(product)} size="small">
-//                       <EditIcon />
-//                     </IconButton>
-//                     <IconButton onClick={() => handleDelete(product.id)} size="small" color="error">
-//                       <DeleteIcon />
-//                     </IconButton>
-//                   </TableCell>
-//                 </TableRow>
-//               );
-//             })}
-//           </TableBody>
-//         </Table>
-//       </TableContainer>
-
-//       {/* Dialog de formulaire */}
-//       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-//         <DialogTitle>{editingProduct ? 'Modifier' : 'Nouveau'} Produit</DialogTitle>
-//         <DialogContent>
-//           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-//             <TextField
-//               label="Nom"
-//               name="name"
-//               value={formData.name}
-//               onChange={handleChange}
-//               required
-//               fullWidth
-//             />
-//             <TextField
-//               label="Description"
-//               name="description"
-//               value={formData.description}
-//               onChange={handleChange}
-//               multiline
-//               rows={3}
-//               fullWidth
-//             />
-//             <FormControl fullWidth>
-//               <InputLabel>Catégorie</InputLabel>
-//               <Select
-//                 name="category"
-//                 value={formData.category}
-//                 onChange={handleChange}
-//                 label="Catégorie"
-//               >
-//                 <MenuItem value="produit">Produit</MenuItem>
-//                 <MenuItem value="service">Service</MenuItem>
-//               </Select>
-//             </FormControl>
-//             <TextField
-//               label="Prix HT (DA)"
-//               name="price"
-//               type="number"
-//               value={formData.price}
-//               onChange={handleChange}
-//               required
-//               fullWidth
-//             />
-//             <FormControl fullWidth>
-//               <InputLabel>Taux TVA</InputLabel>
-//               <Select
-//                 name="tva_rate"
-//                 value={formData.tva_rate}
-//                 onChange={handleChange}
-//                 label="Taux TVA"
-//               >
-//                 {config.tvaRates.map((rate) => (
-//                   <MenuItem key={rate} value={rate}>
-//                     {rate}%
-//                   </MenuItem>
-//                 ))}
-//               </Select>
-//             </FormControl>
-//           </Box>
-//         </DialogContent>
-//         <DialogActions>
-//           <Button onClick={handleCloseDialog}>Annuler</Button>
-//           <Button onClick={handleSubmit} variant="contained">
-//             {editingProduct ? 'Modifier' : 'Créer'}
-//           </Button>
-//         </DialogActions>
-//       </Dialog>
-//     </Box>
-//   );
-// };
-
-// export default ProductsPage;
-
 
 
 /**
@@ -309,12 +58,17 @@ interface ProductFormState {
   name: string;
   description?: string;
   category: string;
-  price: string | number;
+  unit_price: string | number;
+  currency: string;
   tva_rate: string | number;
+  stock?: string | number;
 }
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -323,18 +77,22 @@ const ProductsPage = () => {
     name: '',
     description: '',
     category: 'produit',
-    price: '',
+    unit_price: '', // Always string for controlled input
+    currency: 'EUR',
     tva_rate: 19,
+    stock: 0,
   });
 
   useEffect(() => {
     loadProducts();
-  }, []);
+  }, [page, pageSize]);
 
   const loadProducts = async () => {
     try {
-      const data = await productService.getAll();
-      setProducts(data);
+      setLoading(true);
+      const data = await productService.getAll(page, pageSize);
+      setProducts(data.items);
+      setTotal(data.total);
     } catch (error) {
       console.error('Erreur chargement produits:', error);
     } finally {
@@ -349,8 +107,10 @@ const ProductsPage = () => {
         name: product.name,
         description: product.description || '',
         category: product.category,
-        price: product.price,
+        unit_price: product.unit_price !== undefined && product.unit_price !== null ? product.unit_price.toString() : '',
+        currency: product.currency || 'EUR',
         tva_rate: product.tva_rate,
+        stock: product.stock !== undefined && product.stock !== null ? product.stock.toString() : '0',
       });
     } else {
       setEditingProduct(null);
@@ -358,8 +118,10 @@ const ProductsPage = () => {
         name: '',
         description: '',
         category: 'produit',
-        price: '',
+        unit_price: '',
+        currency: 'EUR',
         tva_rate: 19,
+        stock: 0,
       });
     }
     setDialogOpen(true);
@@ -372,7 +134,7 @@ const ProductsPage = () => {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    
+    console.log('handleChange:', name, value); // DEBUG
     setFormData({
       ...formData,
       [name]: value,
@@ -382,8 +144,9 @@ const ProductsPage = () => {
   const handleSubmit = async () => {
     try {
       // Convertir les champs numériques avant l'envoi
-      const price = Number(formData.price);
+      const unit_price = Number(formData.unit_price);
       const tva_rate = Number(formData.tva_rate);
+      const stock = formData.category === 'produit' ? Number(formData.stock || 0) : 0;
       
       // Validation
       if (!formData.name || !formData.category) {
@@ -391,7 +154,7 @@ const ProductsPage = () => {
         return;
       }
       
-      if (isNaN(price) || price <= 0) {
+      if (isNaN(unit_price) || unit_price <= 0) {
         alert('Le prix doit être un nombre supérieur à 0');
         return;
       }
@@ -401,10 +164,16 @@ const ProductsPage = () => {
         return;
       }
       
+      if (formData.category === 'produit' && (isNaN(stock) || stock < 0)) {
+        alert('Le stock doit être un nombre positif');
+        return;
+      }
+      
       const dataToSubmit = {
         ...formData,
-        price,
-        tva_rate,
+        unit_price: Number(unit_price),
+        tva_rate: Number(tva_rate),
+        stock: formData.category === 'produit' ? Number(stock) : 0,
       };
       
       console.log('Données envoyées:', dataToSubmit);
@@ -446,7 +215,7 @@ const ProductsPage = () => {
     produits: products.filter(p => p.category === 'produit').length,
     services: products.filter(p => p.category === 'service').length,
     avgPrice: products.length > 0
-      ? products.reduce((sum, p) => sum + p.price, 0) / products.length
+      ? products.reduce((sum, p) => sum + p.unit_price, 0) / products.length
       : 0,
   };
 
@@ -491,7 +260,7 @@ const ProductsPage = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* En-tête avec gradient */}
       <Box
         sx={{
@@ -714,7 +483,7 @@ const ProductsPage = () => {
             <CardContent sx={{ p: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#f59e0b', fontSize: '0.8125rem' }}>
-                  Prix Moyen
+                  Dernier ajouté
                 </Typography>
                 <Box
                   sx={{
@@ -731,7 +500,11 @@ const ProductsPage = () => {
                 </Box>
               </Box>
               <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                {stats.avgPrice.toLocaleString('fr-DZ', { maximumFractionDigits: 0 })} DA
+                {(() => {
+                  if (products.length === 0) return "Aucun produit";
+                  const recentProduct = products.reduce((latest, p) => new Date(p.created_at) > new Date(latest.created_at) ? p : latest, products[0]);
+                  return ` ${recentProduct.name}`;
+                })()}
               </Typography>
             </CardContent>
           </Card>
@@ -796,7 +569,9 @@ const ProductsPage = () => {
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden',
+          overflow: 'auto',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <Table>
@@ -880,6 +655,20 @@ const ProductsPage = () => {
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
                   py: 2,
+                  display: { xs: 'none', lg: 'table-cell' },
+                }}
+              >
+                Stock
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  fontWeight: 700,
+                  color: '#1e293b',
+                  fontSize: '0.875rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  py: 2,
                 }}
               >
                 Actions
@@ -889,7 +678,7 @@ const ProductsPage = () => {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} sx={{ textAlign: 'center', py: 8 }}>
+                <TableCell colSpan={7} sx={{ textAlign: 'center', py: 8 }}>
                   <Box
                     sx={{
                       display: 'flex',
@@ -939,15 +728,15 @@ const ProductsPage = () => {
               </TableRow>
             ) : (
               filteredProducts.map((product) => {
-                const price = Number(product.price) || 0;
+                const unit_price = Number(product.unit_price) || 0;
                 const tvaRate = Number(product.tva_rate) || 0;
-                const priceTTC = price * (1 + tvaRate / 100);
+                const priceTTC = unit_price * (1 + tvaRate / 100);
                 
                 // Debug: vérifier les valeurs
                 if (isNaN(priceTTC)) {
                   console.warn('Prix TTC invalide pour le produit:', {
                     product,
-                    price,
+                    unit_price,
                     tvaRate,
                     priceTTC
                   });
@@ -1020,7 +809,7 @@ const ProductsPage = () => {
                     </TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                       <Typography variant="body2" sx={{ fontWeight: 500, color: '#64748b' }}>
-                        {(product.price || 0).toLocaleString('fr-DZ')} DA
+                        {(product.unit_price || 0).toLocaleString('fr-FR')} {product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : product.currency === 'USD' ? '$' : 'DA'}
                       </Typography>
                     </TableCell>
                     <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
@@ -1037,8 +826,26 @@ const ProductsPage = () => {
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body1" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                        {priceTTC.toLocaleString('fr-DZ')} DA
+                        {priceTTC.toLocaleString('fr-FR')} {product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : product.currency === 'USD' ? '$' : 'DA'}
                       </Typography>
+                    </TableCell>
+                    <TableCell align="right" sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+                      {product.category === 'produit' ? (
+                        <Chip
+                          icon={<InventoryIcon sx={{ fontSize: 14 }} />}
+                          label={`${product.stock || 0} unités`}
+                          size="small"
+                          sx={{
+                            bgcolor: (product.stock || 0) > 10 ? alpha('#10b981', 0.1) : (product.stock || 0) > 0 ? alpha('#f59e0b', 0.1) : alpha('#ef4444', 0.1),
+                            color: (product.stock || 0) > 10 ? '#10b981' : (product.stock || 0) > 0 ? '#f59e0b' : '#ef4444',
+                            fontWeight: 600,
+                          }}
+                        />
+                      ) : (
+                        <Typography variant="body2" sx={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                          N/A
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell align="right">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
@@ -1081,6 +888,48 @@ const ProductsPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      {total > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 3,
+            p: 2,
+            bgcolor: alpha('#6366f1', 0.03),
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, total)} sur {total} produits
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Précédent
+            </Button>
+            <Typography variant="body2" sx={{ px: 2 }}>
+              Page {page} sur {Math.ceil(total / pageSize)}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page >= Math.ceil(total / pageSize)}
+              onClick={() => setPage(page + 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Suivant
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       {/* Dialog de formulaire moderne */}
       <Dialog
@@ -1207,11 +1056,45 @@ const ProductsPage = () => {
                 </MenuItem>
               </Select>
             </FormControl>
+            <FormControl
+              fullWidth
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#6366f1',
+                  fontWeight: 600,
+                },
+              }}
+            >
+              <InputLabel>Devise</InputLabel>
+              <Select
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                label="Devise"
+                startAdornment={
+                  <InputAdornment position="start">
+                    <MoneyIcon sx={{ color: '#6366f1' }} />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="EUR">€ Euro (EUR)</MenuItem>
+                <MenuItem value="GBP">£ Livre Sterling (GBP)</MenuItem>
+                <MenuItem value="USD">$ Dollar US (USD)</MenuItem>
+                <MenuItem value="DZD">DA Dinar Algérien (DZD)</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
-              label="Prix HT (DA)"
-              name="price"
+              label={`Prix HT (${formData.currency === 'EUR' ? '€' : formData.currency === 'GBP' ? '£' : formData.currency === 'DZD' ? 'DA' : '$'})`}
+              name="unit_price"
               type="number"
-              value={formData.price}
+              value={formData.unit_price}
               onChange={handleChange}
               required
               fullWidth
@@ -1272,6 +1155,38 @@ const ProductsPage = () => {
                 ))}
               </Select>
             </FormControl>
+            {formData.category === 'produit' && (
+              <TextField
+                label="Stock disponible"
+                name="stock"
+                type="number"
+                value={formData.stock}
+                onChange={handleChange}
+                fullWidth
+                inputProps={{ min: 0, step: "1" }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <InventoryIcon sx={{ color: '#6366f1' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#6366f1',
+                      borderWidth: 2,
+                    },
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#6366f1',
+                    fontWeight: 600,
+                  },
+                }}
+                helperText="Quantité disponible en stock"
+              />
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 2 }}>

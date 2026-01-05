@@ -658,12 +658,38 @@ const StatCard = ({ title, value, icon, color, subtitle, trend }: StatCardProps)
   );
 };
 
+interface RecentInvoice {
+  id: number;
+  invoice_number: string;
+  client_name: string;
+  total_ttc: number;
+  status: string;
+  date: string;
+  is_quote: boolean;
+}
+
+interface RecentExpense {
+  id: number;
+  category: string;
+  amount: number;
+  date: string;
+  description: string;
+}
+
+interface RecentActivity {
+  recent_invoices: RecentInvoice[];
+  recent_expenses: RecentExpense[];
+}
+
 const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
+    loadRecentActivity();
   }, []);
 
   const loadStats = async () => {
@@ -674,6 +700,17 @@ const Dashboard = () => {
       console.error('Erreur chargement stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecentActivity = async () => {
+    try {
+      const data = await dashboardService.getRecentActivity();
+      setRecentActivity(data);
+    } catch (error) {
+      console.error('Erreur chargement activité récente:', error);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -794,7 +831,7 @@ const Dashboard = () => {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Chiffre d'affaires"
-              value={`${(stats?.total_revenue || 0).toLocaleString('fr-DZ')} DA`}
+              value={`${(stats?.total_revenue || 0).toLocaleString('fr-FR')} DA`}
               icon={<TrendingUp sx={{ fontSize: { xs: 28, sm: 32 } }} />}
               color="#6366f1"
               subtitle="Factures payées"
@@ -826,7 +863,7 @@ const Dashboard = () => {
           <Grid item xs={12} sm={6} lg={3}>
             <StatCard
               title="Dépenses"
-              value={`${(stats?.total_expenses || 0).toLocaleString('fr-DZ')} DA`}
+              value={`${(stats?.total_expenses || 0).toLocaleString('fr-FR')} DA`}
               icon={<AccountBalance sx={{ fontSize: { xs: 28, sm: 32 } }} />}
               color="#ef4444"
               subtitle="Total dépensé"
@@ -880,7 +917,7 @@ const Dashboard = () => {
                       BÉNÉFICE NET
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>
-                      {netProfit.toLocaleString('fr-DZ')} DA
+                      {netProfit.toLocaleString('fr-FR')} DA
                     </Typography>
                   </Box>
                 </Box>
@@ -1126,38 +1163,186 @@ const Dashboard = () => {
                   </Box>
                 </Box>
 
-                <Box
-                  sx={{
-                    p: { xs: 3, sm: 4 },
-                    borderRadius: 3,
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(102, 126, 234, 0.03))',
-                    border: '2px dashed',
-                    borderColor: alpha('#6366f1', 0.2),
-                    textAlign: 'center',
-                  }}
-                >
+                {activityLoading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : recentActivity && (recentActivity.recent_invoices.length > 0 || recentActivity.recent_expenses.length > 0) ? (
+                  <Box>
+                    {/* Recent Invoices */}
+                    {recentActivity.recent_invoices.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: 'text.secondary' }}>
+                          Factures récentes
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          {recentActivity.recent_invoices.slice(0, 5).map((invoice) => (
+                            <Box
+                              key={invoice.id}
+                              sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                background: alpha('#f8fafc', 0.5),
+                                border: '1px solid',
+                                borderColor: 'rgba(0, 0, 0, 0.06)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  background: alpha('#6366f1', 0.05),
+                                  borderColor: '#6366f1',
+                                }
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {invoice.invoice_number}
+                                  </Typography>
+                                  <Chip
+                                    label={invoice.is_quote ? 'Devis' : 'Facture'}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.7rem',
+                                      bgcolor: invoice.is_quote ? alpha('#f59e0b', 0.1) : alpha('#6366f1', 0.1),
+                                      color: invoice.is_quote ? '#f59e0b' : '#6366f1',
+                                    }}
+                                  />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                  {invoice.client_name}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                  {invoice.total_ttc.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} DA
+                                </Typography>
+                                <Chip
+                                  label={
+                                    invoice.status === 'paid' ? 'Payée' :
+                                    invoice.status === 'unpaid' ? 'Impayée' :
+                                    invoice.status === 'draft' ? 'Brouillon' :
+                                    invoice.status === 'converted' ? 'Convertie' :
+                                    invoice.status
+                                  }
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: '0.7rem',
+                                    bgcolor: 
+                                      invoice.status === 'paid' ? alpha('#10b981', 0.1) :
+                                      invoice.status === 'unpaid' ? alpha('#ef4444', 0.1) :
+                                      invoice.status === 'converted' ? alpha('#8b5cf6', 0.1) :
+                                      alpha('#6b7280', 0.1),
+                                    color: 
+                                      invoice.status === 'paid' ? '#10b981' :
+                                      invoice.status === 'unpaid' ? '#ef4444' :
+                                      invoice.status === 'converted' ? '#8b5cf6' :
+                                      '#6b7280',
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Recent Expenses */}
+                    {recentActivity.recent_expenses.length > 0 && (
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600, color: 'text.secondary' }}>
+                          Dépenses récentes
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          {recentActivity.recent_expenses.slice(0, 5).map((expense) => (
+                            <Box
+                              key={expense.id}
+                              sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                background: alpha('#f8fafc', 0.5),
+                                border: '1px solid',
+                                borderColor: 'rgba(0, 0, 0, 0.06)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  background: alpha('#ef4444', 0.05),
+                                  borderColor: '#ef4444',
+                                }
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Chip
+                                    label={expense.category}
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.7rem',
+                                      bgcolor: alpha('#ef4444', 0.1),
+                                      color: '#ef4444',
+                                    }}
+                                  />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                  {expense.description || 'Aucune description'}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ textAlign: 'right' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#ef4444' }}>
+                                  -{expense.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} DA
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {new Date(expense.date).toLocaleDateString('fr-FR')}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
                   <Box
                     sx={{
-                      width: { xs: 56, sm: 64 },
-                      height: { xs: 56, sm: 64 },
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05))',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto',
-                      mb: 2,
+                      p: { xs: 3, sm: 4 },
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(102, 126, 234, 0.03))',
+                      border: '2px dashed',
+                      borderColor: alpha('#6366f1', 0.2),
+                      textAlign: 'center',
                     }}
                   >
-                    <Typography sx={{ fontSize: { xs: '1.75rem', sm: '2rem' } }}>📊</Typography>
+                    <Box
+                      sx={{
+                        width: { xs: 56, sm: 64 },
+                        height: { xs: 56, sm: 64 },
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: { xs: '1.75rem', sm: '2rem' } }}>📊</Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#6366f1', fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+                      Aucune activité récente
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
+                      Commencez par créer vos premières factures ou enregistrer vos dépenses
+                    </Typography>
                   </Box>
-                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#6366f1', fontSize: { xs: '1rem', sm: '1.125rem' } }}>
-                    Fonctionnalité à venir
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
-                    Vous pourrez bientôt consulter l'historique détaillé de vos factures, devis et dépenses
-                  </Typography>
-                </Box>
+                )}
               </CardContent>
             </Card>
           </Grid>

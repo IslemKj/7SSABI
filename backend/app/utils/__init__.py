@@ -9,7 +9,7 @@ from .auth import (
     get_current_user,
     authenticate_user
 )
-from .pdf_generator import generate_invoice_pdf, PDFGenerator
+from .pdf_generator import generate_invoice_pdf
 
 __all__ = [
     "verify_password",
@@ -18,6 +18,5 @@ __all__ = [
     "decode_token",
     "get_current_user",
     "authenticate_user",
-    "generate_invoice_pdf",
-    "PDFGenerator"
+    "generate_invoice_pdf"
 ]

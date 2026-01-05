@@ -2,6 +2,15 @@
  * Types pour l'application
  */
 
+// Pagination
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 // User & Auth
 export interface User {
   id: number;
@@ -9,9 +18,26 @@ export interface User {
   email: string;
   entreprise_name?: string;
   nif?: string;
+  rc_number?: string;
   phone?: string;
   address?: string;
+  logo_url?: string;
   is_active: boolean;
+  role: string;
+  created_at: string;
+}
+
+export interface UserStats {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  invoice_count: number;
+  total_revenue: number;
+  client_count: number;
+  product_count: number;
+  expense_count: number;
+  is_active: boolean;
+  role: string;
   created_at: string;
 }
 
@@ -45,6 +71,7 @@ export interface Client {
   email?: string;
   address?: string;
   nif?: string;
+  rc_number?: string;
   created_at: string;
 }
 
@@ -55,26 +82,33 @@ export interface ClientFormData {
   email?: string;
   address?: string;
   nif?: string;
+  rc_number?: string;
 }
 
 // Product
+
 export interface Product {
   id: number;
   user_id: number;
   name: string;
   description?: string;
-  price: number; // Prix HT
+  unit_price: number; // Prix HT
+  currency: string; // EUR, GBP, USD
   tva_rate: number; // Taux TVA (0, 9, 19)
   category: string; // 'produit' ou 'service'
+  stock?: number; // Quantité en stock
   created_at: string;
 }
+
 
 export interface ProductFormData {
   name: string;
   description?: string;
-  price: number;
+  unit_price: number;
+  currency: string;
   tva_rate: number;
   category: string;
+  stock?: number;
 }
 
 // Invoice
@@ -96,6 +130,9 @@ export interface Invoice {
   invoice_number: string;
   date: string;
   due_date?: string;
+  currency: string; // EUR, GBP, USD
+  exchange_rate?: number; // Taux de change vers DZD
+  language: string; // fr, en
   total_ht: number;
   total_tva: number;
   total_ttc: number;
@@ -113,6 +150,8 @@ export interface InvoiceFormData {
   invoice_number?: string;
   date: string;
   due_date?: string;
+  currency?: string;
+  language?: string;
   status?: 'draft' | 'paid' | 'unpaid' | 'partial' | 'cancelled';
   notes?: string;
   is_quote: boolean;

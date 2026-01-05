@@ -2,14 +2,16 @@
  * Service Clients
  */
 import api from './api';
-import type { Client, ClientFormData } from '@/types';
+import type { Client, ClientFormData, PaginatedResponse } from '@/types';
 
 export const clientService = {
   /**
-   * Récupérer tous les clients
+   * Récupérer tous les clients avec pagination
    */
-  async getAll(): Promise<Client[]> {
-    const response = await api.get<Client[]>('/api/clients/');
+  async getAll(page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<Client>> {
+    const response = await api.get<PaginatedResponse<Client>>('/api/clients/', {
+      params: { page, page_size: pageSize }
+    });
     return response.data;
   },
 
@@ -42,5 +44,20 @@ export const clientService = {
    */
   async delete(id: number): Promise<void> {
     await api.delete(`/api/clients/${id}/`);
+  },
+
+  /**
+   * Importer des clients depuis un CSV
+   */
+  async importCSV(file: File): Promise<{ success: boolean; created_count: number; errors: string[]; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/api/clients/import-csv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
   },
 };

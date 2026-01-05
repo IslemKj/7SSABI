@@ -2,10 +2,30 @@
 Schémas Pydantic pour la validation des données
 """
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from typing import Optional, List
+from pydantic.json import pydantic_encoder
+from typing import Optional, List, Generic, TypeVar
 from datetime import datetime
 from datetime import date as date_type
 from decimal import Decimal
+
+
+def decimal_encoder(v):
+    """Custom encoder for Decimal to float"""
+    if isinstance(v, Decimal):
+        return float(v)
+    return v
+
+
+# ========== PAGINATION SCHEMAS ==========
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    """Schéma générique pour les réponses paginées"""
+    items: List[T]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 # ========== USER SCHEMAS ==========
@@ -15,6 +35,7 @@ class UserBase(BaseModel):
     email: EmailStr
     entreprise_name: Optional[str] = Field(None, alias='company_name')
     nif: Optional[str] = None
+    rc_number: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None
     
@@ -26,22 +47,54 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
 
 
+
 class UserUpdate(BaseModel):
     """Schéma pour mettre à jour un utilisateur"""
-    name: Optional[str] = None
-    entreprise_name: Optional[str] = None
+    name: Optional[str] = Field(None, alias='full_name')
+    entreprise_name: Optional[str] = Field(None, alias='company_name')
     nif: Optional[str] = None
+    rc_number: Optional[str] = None
     address: Optional[str] = None
     phone: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class UserResponse(UserBase):
     """Schéma de réponse utilisateur"""
     id: int
     is_active: bool
+    role: str = "user"
     created_at: datetime
+    logo_url: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserStats(BaseModel):
+    """Schéma pour les statistiques utilisateur"""
+    user_id: int
+    user_name: str
+    user_email: str
+    invoice_count: int
+    total_revenue: float
+    client_count: int
+    product_count: int
+    expense_count: int
+    is_active: bool
+    role: str
+    created_at: datetime
+
+
+# ========== PASSWORD RESET SCHEMAS ==========
+class PasswordResetRequest(BaseModel):
+    """Schéma pour demander une réinitialisation de mot de passe"""
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    """Schéma pour confirmer la réinitialisation de mot de passe"""
+    token: str
+    new_password: str = Field(..., min_length=6)
 
 
 # ========== CLIENT SCHEMAS ==========
@@ -53,6 +106,7 @@ class ClientBase(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     nif: Optional[str] = None
+    rc_number: Optional[str] = None
 
 
 class ClientCreate(ClientBase):
@@ -68,6 +122,7 @@ class ClientUpdate(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     nif: Optional[str] = None
+    rc_number: Optional[str] = None
 
 
 class ClientResponse(ClientBase):
@@ -84,9 +139,11 @@ class ProductBase(BaseModel):
     """Schéma de base produit"""
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    price: Decimal = Field(..., gt=0, alias='unit_price')
-    tva_rate: Decimal = Field(default=19, ge=0, le=100)
+    unit_price: float = Field(..., gt=0)
+    currency: str = Field(default='EUR', pattern='^(EUR|GBP|USD|DZD)$')
+    tva_rate: float = Field(default=19, ge=0, le=100)
     category: str = Field(default='produit')  # 'produit' ou 'service'
+    stock: Optional[int] = Field(default=0, ge=0)
     
     model_config = ConfigDict(populate_by_name=True)
 
@@ -100,9 +157,11 @@ class ProductUpdate(BaseModel):
     """Schéma pour mettre à jour un produit"""
     name: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[Decimal] = Field(None, gt=0, alias='unit_price')
-    tva_rate: Optional[Decimal] = Field(None, ge=0, le=100)
+    unit_price: Optional[float] = Field(None, gt=0)
+    currency: Optional[str] = Field(None, pattern='^(EUR|GBP|USD|DZD)$')
+    tva_rate: Optional[float] = Field(None, ge=0, le=100)
     category: Optional[str] = None
+    stock: Optional[int] = Field(None, ge=0)
     
     model_config = ConfigDict(populate_by_name=True)
 
@@ -113,9 +172,11 @@ class ProductResponse(BaseModel):
     user_id: int
     name: str
     description: Optional[str] = None
-    price: Decimal = Field(alias='unit_price')
-    tva_rate: Decimal
+    unit_price: float
+    currency: str
+    tva_rate: float
     category: str
+    stock: Optional[int] = 0
     created_at: datetime
     
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
@@ -127,7 +188,7 @@ class InvoiceItemBase(BaseModel):
     product_id: Optional[int] = None
     description: str
     quantity: int = Field(..., gt=0)
-    unit_price: Decimal = Field(..., gt=0)
+    unit_price: float = Field(..., gt=0)
 
 
 class InvoiceItemCreate(InvoiceItemBase):
@@ -139,7 +200,7 @@ class InvoiceItemResponse(InvoiceItemBase):
     """Schéma de réponse ligne de facture"""
     id: int
     invoice_id: int
-    total: Decimal
+    total: float
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -150,13 +211,18 @@ class InvoiceBase(BaseModel):
     client_id: int
     date: date_type
     due_date: Optional[date_type] = None
-    tva_rate: Decimal = Field(default=19.0, ge=0, le=100)
+    currency: str = Field(default='EUR', pattern='^(EUR|GBP|USD|DZD)$')
+    language: str = Field(default='fr', pattern='^(fr|en)$')
+    tva_rate: float = Field(default=19.0, ge=0, le=100)
     notes: Optional[str] = None
     is_quote: bool = False
+    exchange_rate: float = Field(default=1, ge=0, description="Exchange rate to DZD")
+    total_dzd: float = Field(default=0, ge=0, description="Total in DZD")
 
 
 class InvoiceCreate(InvoiceBase):
     """Schéma pour créer une facture"""
+    invoice_number: Optional[str] = None  # Numéro de facture optionnel (généré par le backend si absent)
     items: List[InvoiceItemCreate]
     status: Optional[str] = Field(default="unpaid")
 
@@ -167,12 +233,16 @@ class InvoiceUpdate(BaseModel):
     invoice_number: Optional[str] = None
     date: Optional[date_type] = None
     due_date: Optional[date_type] = None
+    currency: Optional[str] = Field(None, pattern='^(EUR|GBP|USD|DZD)$')
+    language: Optional[str] = Field(None, pattern='^(fr|en)$')
+    exchange_rate: Optional[float] = Field(None, ge=0, description="Exchange rate to DZD")
+    total_dzd: Optional[float] = Field(None, ge=0, description="Total in DZD")
     status: Optional[str] = None
-    paid_amount: Optional[Decimal] = None
+    paid_amount: Optional[float] = None
     notes: Optional[str] = None
-    total_ht: Optional[Decimal] = None
-    total_tva: Optional[Decimal] = None
-    total_ttc: Optional[Decimal] = None
+    total_ht: Optional[float] = None
+    total_tva: Optional[float] = None
+    total_ttc: Optional[float] = None
     is_quote: Optional[bool] = None
     items: Optional[List[InvoiceItemCreate]] = None
 
@@ -182,15 +252,16 @@ class InvoiceResponse(InvoiceBase):
     id: int
     user_id: int
     invoice_number: str
-    total_ht: Decimal
-    total_tva: Decimal = Field(alias='tva_amount')
-    total_ttc: Decimal
+    total_ht: float
+    total_tva: float = Field(alias='tva_amount')
+    total_ttc: float
     status: str
-    paid_amount: Decimal
+    paid_amount: float
     pdf_url: Optional[str] = None
     items: List[InvoiceItemResponse]
     created_at: datetime
-    
+    exchange_rate: float
+    total_dzd: float
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
@@ -198,7 +269,7 @@ class InvoiceResponse(InvoiceBase):
 class ExpenseBase(BaseModel):
     """Schéma de base dépense"""
     category: str = Field(..., min_length=1, max_length=100)
-    amount: Decimal = Field(..., gt=0)
+    amount: float = Field(..., gt=0)
     date: date_type
     description: Optional[str] = None
 
@@ -211,7 +282,7 @@ class ExpenseCreate(ExpenseBase):
 class ExpenseUpdate(BaseModel):
     """Schéma pour mettre à jour une dépense"""
     category: Optional[str] = None
-    amount: Optional[Decimal] = Field(None, gt=0)
+    amount: Optional[float] = Field(None, gt=0)
     date: Optional[date_type] = None
     description: Optional[str] = None
 
@@ -254,3 +325,26 @@ class DashboardStats(BaseModel):
     paid_invoices: int  # Factures payées
     pending_invoices: int  # Factures en attente
     total_quotes: int  # Nombre de devis
+
+
+# ========== NOTIFICATION SCHEMAS ==========
+class NotificationCreate(BaseModel):
+    """Schéma pour créer une notification"""
+    type: str
+    title: str
+    message: str
+    link: Optional[str] = None
+
+
+class NotificationResponse(BaseModel):
+    """Schéma de réponse notification"""
+    id: int
+    user_id: int
+    type: str
+    title: str
+    message: str
+    link: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)

@@ -2,6 +2,7 @@
 Routes pour le tableau de bord (dashboard)
 """
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from datetime import datetime, date, timedelta
@@ -13,6 +14,7 @@ from ..database import get_db
 from ..models import User, Invoice, Expense, Client, Product, InvoiceItem
 from ..schemas import DashboardStats
 from ..utils.auth import get_current_user
+from ..utils.analytics_pdf_generator import generate_analytics_pdf
 
 router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
 
@@ -26,7 +28,7 @@ def get_dashboard_stats(
     Récupérer les statistiques du tableau de bord
     """
     # Chiffre d'affaires (factures payées uniquement)
-    total_revenue = db.query(func.sum(Invoice.total_ttc)).filter(
+    total_revenue = db.query(func.sum(Invoice.total_dzd)).filter(
         Invoice.user_id == current_user.id,
         Invoice.status == "paid",
         Invoice.is_quote == False
@@ -65,7 +67,8 @@ def get_dashboard_stats(
     # Total devis
     total_quotes = db.query(func.count(Invoice.id)).filter(
         Invoice.user_id == current_user.id,
-        Invoice.is_quote == True
+        Invoice.is_quote == True,
+        Invoice.status != "converted"  # Exclure les devis convertis
     ).scalar() or 0
     
     return DashboardStats(
@@ -143,7 +146,7 @@ def get_revenue_trend(
         month = target_date.month
         
         # CA du mois (factures payées uniquement)
-        revenue = db.query(func.sum(Invoice.total_ttc)).filter(
+        revenue = db.query(func.sum(Invoice.total_dzd)).filter(
             Invoice.user_id == current_user.id,
             Invoice.status == "paid",
             Invoice.is_quote == False,
@@ -185,14 +188,14 @@ def get_top_clients(
     top_clients = db.query(
         Client.id,
         Client.name,
-        func.sum(Invoice.total_ttc).label('total_revenue'),
+        func.sum(Invoice.total_dzd).label('total_revenue'),
         func.count(Invoice.id).label('invoice_count')
     ).join(Invoice, Invoice.client_id == Client.id).filter(
         Client.user_id == current_user.id,
         Invoice.status == "paid",
         Invoice.is_quote == False
     ).group_by(Client.id, Client.name).order_by(
-        func.sum(Invoice.total_ttc).desc()
+        func.sum(Invoice.total_dzd).desc()
     ).limit(limit).all()
     
     return [
@@ -268,15 +271,15 @@ def get_kpis(
     prev_month_end = date(prev_year, prev_month, monthrange(prev_year, prev_month)[1])
     
     # CA mois actuel
-    current_revenue = db.query(func.sum(Invoice.total_ttc)).filter(
+    current_revenue = db.query(func.sum(Invoice.total_dzd)).filter(
         Invoice.user_id == current_user.id,
         Invoice.status == "paid",
         Invoice.is_quote == False,
         Invoice.date >= current_month_start
     ).scalar() or Decimal(0)
-    
+
     # CA mois précédent
-    prev_revenue = db.query(func.sum(Invoice.total_ttc)).filter(
+    prev_revenue = db.query(func.sum(Invoice.total_dzd)).filter(
         Invoice.user_id == current_user.id,
         Invoice.status == "paid",
         Invoice.is_quote == False,
@@ -290,7 +293,7 @@ def get_kpis(
         growth = float(((current_revenue - prev_revenue) / prev_revenue) * 100)
     
     # Ticket moyen
-    avg_invoice = db.query(func.avg(Invoice.total_ttc)).filter(
+    avg_invoice = db.query(func.avg(Invoice.total_dzd)).filter(
         Invoice.user_id == current_user.id,
         Invoice.status == "paid",
         Invoice.is_quote == False
@@ -319,3 +322,43 @@ def get_kpis(
         "average_invoice": float(avg_invoice),
         "conversion_rate": round(conversion_rate, 2)
     }
+
+
+@router.get("/export-pdf")
+def export_analytics_pdf(
+    months: int = 6,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Exporter le rapport analytics en PDF
+    """
+    # Récupérer toutes les données analytics
+    revenue_trend = get_revenue_trend(months, current_user, db)
+    top_clients = get_top_clients(5, current_user, db)
+    top_products = get_top_products(5, current_user, db)
+    kpis = get_kpis(current_user, db)
+    
+    # Nom de l'entreprise
+    company_name = current_user.entreprise_name or current_user.name
+    
+    # Période
+    period = f"{months} derniers mois"
+    
+    # Générer le PDF
+    pdf_path = generate_analytics_pdf(
+        company_name=company_name,
+        period=period,
+        kpis=kpis,
+        revenue_trend=revenue_trend,
+        top_clients=top_clients,
+        top_products=top_products,
+        output_dir="reports"
+    )
+    
+    # Retourner le fichier
+    return FileResponse(
+        path=pdf_path,
+        filename=f"rapport_analytics_{datetime.now().strftime('%Y%m%d')}.pdf",
+        media_type="application/pdf"
+    )

@@ -2,7 +2,7 @@
 Routes d'authentification
 """
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -16,12 +16,14 @@ from ..utils.auth import (
     create_access_token
 )
 from ..config import settings
+from ..middleware.rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/hour")  # 3 inscriptions par heure max
+async def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """
     Créer un nouveau compte utilisateur
     """
@@ -52,7 +54,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")  # 5 tentatives de connexion par minute max
+async def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
     """
     Connexion utilisateur
     """

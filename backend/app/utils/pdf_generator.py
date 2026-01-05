@@ -13,11 +13,64 @@ from typing import List, Dict
 import os
 
 
+# Traductions
+TRANSLATIONS = {
+    'fr': {
+        'invoice': 'FACTURE',
+        'quote': 'DEVIS',
+        'invoice_number': 'Facture N°',
+        'quote_number': 'Devis N°',
+        'date': 'Date',
+        'due_date': 'Date d\'échéance',
+        'company': 'Entreprise',
+        'client': 'Client',
+        'description': 'Description',
+        'quantity': 'Quantité',
+        'unit_price': 'Prix unitaire',
+        'total': 'Total',
+        'subtotal': 'Total HT',
+        'vat': 'TVA',
+        'total_incl_vat': 'Total TTC',
+        'notes': 'Notes',
+        'status': 'Statut',
+        'paid': 'Payée',
+        'unpaid': 'Non payée',
+        'partial': 'Partiellement payée',
+        'cancelled': 'Annulée'
+    },
+    'en': {
+        'invoice': 'INVOICE',
+        'quote': 'QUOTE',
+        'invoice_number': 'Invoice No.',
+        'quote_number': 'Quote No.',
+        'date': 'Date',
+        'due_date': 'Due Date',
+        'company': 'Company',
+        'client': 'Client',
+        'description': 'Description',
+        'quantity': 'Quantity',
+        'unit_price': 'Unit Price',
+        'total': 'Total',
+        'subtotal': 'Subtotal',
+        'vat': 'VAT',
+        'total_incl_vat': 'Total Incl. VAT',
+        'notes': 'Notes',
+        'status': 'Status',
+        'paid': 'Paid',
+        'unpaid': 'Unpaid',
+        'partial': 'Partially Paid',
+        'cancelled': 'Cancelled'
+    }
+}
+
+
 class PDFGenerator:
     """Générateur de factures PDF"""
     
-    def __init__(self, output_path: str):
+    def __init__(self, output_path: str, language: str = 'fr'):
         self.output_path = output_path
+        self.language = language
+        self.translations = TRANSLATIONS.get(language, TRANSLATIONS['fr'])
         self.doc = SimpleDocTemplate(output_path, pagesize=A4)
         self.styles = getSampleStyleSheet()
         self.elements = []
@@ -41,23 +94,45 @@ class PDFGenerator:
     
     def add_header(self, user_data: Dict, invoice_data: Dict):
         """Ajouter l'en-tête de la facture"""
+        # Logo en haut à gauche si disponible
+        if user_data.get('logo_url') and os.path.exists(user_data['logo_url']):
+            try:
+                logo = Image(user_data['logo_url'], width=3*cm, height=3*cm, kind='proportional')
+                logo.hAlign = 'LEFT'
+                self.elements.append(logo)
+                self.elements.append(Spacer(1, 0.3*cm))
+            except:
+                pass  # Si le logo ne peut pas être chargé, continuer sans
+        
         # Titre
-        doc_type = "DEVIS" if invoice_data.get('is_quote') else "FACTURE"
+        doc_type = self.translations['quote'] if invoice_data.get('is_quote') else self.translations['invoice']
         title = Paragraph(f"<b>{doc_type}</b>", self.title_style)
         self.elements.append(title)
         self.elements.append(Spacer(1, 0.5*cm))
         
         # Informations entreprise et client
+        company_label = self.translations['company']
+        client_label = self.translations['client']
+        
+        # Construire les infos utilisateur
+        user_info = f"<b>{user_data['entreprise_name']}</b><br/>{user_data.get('address', '')}<br/>"
+        if user_data.get('nif'):
+            user_info += f"NIF: {user_data['nif']}<br/>"
+        if user_data.get('rc_number'):
+            user_info += f"RC/CAE: {user_data['rc_number']}<br/>"
+        user_info += f"Tél: {user_data.get('phone', '')}"
+        
+        # Construire les infos client
+        client_info = f"<b>{client_label}</b><br/>{invoice_data['client_name']}<br/>{invoice_data.get('client_address', '')}<br/>"
+        if invoice_data.get('client_nif'):
+            client_info += f"NIF: {invoice_data['client_nif']}<br/>"
+        if invoice_data.get('client_rc_number'):
+            client_info += f"RC/CAE: {invoice_data['client_rc_number']}<br/>"
+        
         info_data = [
             [
-                Paragraph(f"<b>{user_data['entreprise_name']}</b><br/>"
-                         f"{user_data.get('address', '')}<br/>"
-                         f"NIF: {user_data.get('nif', '')}<br/>"
-                         f"Tél: {user_data.get('phone', '')}", self.header_style),
-                Paragraph(f"<b>Client</b><br/>"
-                         f"{invoice_data['client_name']}<br/>"
-                         f"{invoice_data.get('client_address', '')}<br/>"
-                         f"NIF: {invoice_data.get('client_nif', '')}", self.header_style)
+                Paragraph(user_info, self.header_style),
+                Paragraph(client_info, self.header_style)
             ]
         ]
         
@@ -72,9 +147,12 @@ class PDFGenerator:
         self.elements.append(Spacer(1, 1*cm))
         
         # Numéro et date
+        number_label = self.translations['quote_number'] if invoice_data.get('is_quote') else self.translations['invoice_number']
+        date_label = self.translations['date']
+        due_date_label = self.translations['due_date']
         invoice_info = [
-            [f"N° {invoice_data['invoice_number']}", f"Date: {invoice_data['date']}"],
-            ["", f"Échéance: {invoice_data.get('due_date', 'N/A')}"]
+            [f"{number_label} {invoice_data['invoice_number']}", f"{date_label}: {invoice_data['date']}"],
+            ["", f"{due_date_label}: {invoice_data.get('due_date', 'N/A')}"]
         ]
         
         invoice_table = Table(invoice_info, colWidths=[9*cm, 9*cm])
@@ -88,11 +166,19 @@ class PDFGenerator:
         self.elements.append(invoice_table)
         self.elements.append(Spacer(1, 1*cm))
     
-    def add_items_table(self, items: List[Dict], totals: Dict):
+    def add_items_table(self, items: List[Dict], totals: Dict, currency: str = 'EUR'):
         """Ajouter le tableau des articles"""
+        # Symboles de devises
+        currency_symbols = {'EUR': '€', 'GBP': '£', 'USD': '$', 'DZD': 'DA'}
+        symbol = currency_symbols.get(currency, currency)
+        
         # En-tête du tableau
+        desc_label = self.translations['description']
+        qty_label = self.translations['quantity']
+        unit_price_label = self.translations['unit_price']
+        total_label = self.translations['total']
         table_data = [
-            ['Description', 'Quantité', 'Prix unitaire', 'Total']
+            [desc_label, qty_label, f'{unit_price_label} ({symbol})', f'{total_label} ({symbol})']
         ]
         
         # Articles
@@ -100,17 +186,20 @@ class PDFGenerator:
             table_data.append([
                 item['description'],
                 str(item['quantity']),
-                f"{item['unit_price']:.2f} DZD",
-                f"{item['total']:.2f} DZD"
+                f"{symbol}{item['unit_price']:.2f}",
+                f"{symbol}{item['total']:.2f}"
             ])
         
         # Ligne vide
         table_data.append(['', '', '', ''])
         
         # Totaux
-        table_data.append(['', '', 'Total HT:', f"{totals['total_ht']:.2f} DZD"])
-        table_data.append(['', '', f"TVA ({totals['tva_rate']}%):", f"{totals['tva_amount']:.2f} DZD"])
-        table_data.append(['', '', 'Total TTC:', f"{totals['total_ttc']:.2f} DZD"])
+        subtotal_label = self.translations['subtotal']
+        vat_label = self.translations['vat']
+        total_incl_vat_label = self.translations['total_incl_vat']
+        table_data.append(['', '', f'{subtotal_label}:', f"{symbol}{totals['total_ht']:.2f}"])
+        table_data.append(['', '', f"{vat_label} ({totals['tva_rate']}%):", f"{symbol}{totals['tva_amount']:.2f}"])
+        table_data.append(['', '', f'{total_incl_vat_label}:', f"{symbol}{totals['total_ttc']:.2f}"])
         
         # Créer le tableau
         table = Table(table_data, colWidths=[8*cm, 3*cm, 4*cm, 3*cm])
@@ -141,12 +230,15 @@ class PDFGenerator:
     def add_footer(self, notes: str = None):
         """Ajouter le pied de page"""
         if notes:
-            self.elements.append(Paragraph(f"<b>Notes:</b><br/>{notes}", self.styles['Normal']))
+            notes_label = self.translations['notes']
+            self.elements.append(Paragraph(f"<b>{notes_label}:</b><br/>{notes}", self.styles['Normal']))
             self.elements.append(Spacer(1, 0.5*cm))
         
+        thank_you_msg = "Thank you for your business!" if self.language == 'en' else "Merci de votre confiance !"
         footer_text = Paragraph(
-            "Merci de votre confiance !<br/>"
-            "<i>Document généré par 7SSABI - Gestion Comptabilité</i>",
+            f"{thank_you_msg}<br/>"
+            "<i>Document generated by Involeo - Accounting Management</i>" if self.language == 'en' 
+            else "<i>Document généré par Involeo - Gestion Comptabilité</i>",
             ParagraphStyle('Footer', parent=self.styles['Normal'], alignment=TA_CENTER, fontSize=9)
         )
         self.elements.append(footer_text)
@@ -183,8 +275,11 @@ def generate_invoice_pdf(
     filename = f"{invoice_data['invoice_number']}.pdf"
     filepath = os.path.join(output_dir, filename)
     
+    # Récupérer la langue (par défaut français)
+    language = invoice_data.get('language', 'fr')
+    
     # Créer le générateur PDF
-    pdf = PDFGenerator(filepath)
+    pdf = PDFGenerator(filepath, language)
     
     # Préparer les données
     invoice_info = {
@@ -195,6 +290,7 @@ def generate_invoice_pdf(
         'client_name': client_data['name'],
         'client_address': client_data.get('address', ''),
         'client_nif': client_data.get('nif', ''),
+        'client_rc_number': client_data.get('rc_number', ''),
     }
     
     totals = {
@@ -204,9 +300,12 @@ def generate_invoice_pdf(
         'total_ttc': invoice_data['total_ttc']
     }
     
+    # Récupérer la devise (par défaut EUR)
+    currency = invoice_data.get('currency', 'EUR')
+    
     # Construire le PDF
     pdf.add_header(user_data, invoice_info)
-    pdf.add_items_table(items, totals)
+    pdf.add_items_table(items, totals, currency)
     pdf.add_footer(invoice_data.get('notes'))
     pdf.build()
     

@@ -1,7 +1,7 @@
 """
 Routes pour la gestion des factures
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -10,51 +10,82 @@ from decimal import Decimal
 from datetime import date, datetime
 import os
 import json
+import math
 
 from ..database import get_db
 from ..models import User, Invoice, InvoiceItem, Client, Product
-from ..schemas import InvoiceCreate, InvoiceUpdate, InvoiceResponse
+from ..schemas import InvoiceCreate, InvoiceUpdate, InvoiceResponse, PaginatedResponse
 from ..utils.auth import get_current_user
 from ..utils.pdf_generator import generate_invoice_pdf
+from ..utils.notifications import create_invoice_notification
 
 router = APIRouter(prefix="/api/invoices", tags=["Invoices"])
 
 
 def generate_invoice_number(db: Session, user_id: int) -> str:
     """Générer un numéro de facture unique"""
-    # Compter les factures de l'utilisateur
-    count = db.query(func.count(Invoice.id)).filter(
-        Invoice.user_id == user_id,
-        Invoice.is_quote == False
-    ).scalar()
-    
     year = datetime.now().year
-    return f"FA-{year}-{count + 1:05d}"
+    
+    # Trouver le dernier numéro de facture de l'année en cours pour cet utilisateur
+    last_invoice = db.query(Invoice).filter(
+        Invoice.user_id == user_id,
+        Invoice.is_quote == False,
+        Invoice.invoice_number.like(f"FA-{year}-U{user_id}-%")
+    ).order_by(Invoice.invoice_number.desc()).first()
+    
+    if last_invoice and last_invoice.invoice_number:
+        # Extraire le numéro et incrémenter
+        try:
+            last_num = int(last_invoice.invoice_number.split('-')[-1])
+            next_num = last_num + 1
+        except (ValueError, IndexError):
+            next_num = 1
+    else:
+        next_num = 1
+    
+    # Format: FA-2025-U3-00001 (avec l'ID utilisateur)
+    return f"FA-{year}-U{user_id}-{next_num:05d}"
 
 
 def generate_quote_number(db: Session, user_id: int) -> str:
     """Générer un numéro de devis unique"""
-    count = db.query(func.count(Invoice.id)).filter(
-        Invoice.user_id == user_id,
-        Invoice.is_quote == True
-    ).scalar()
-    
     year = datetime.now().year
-    return f"DEV-{year}-{count + 1:05d}"
+    
+    # Trouver le dernier numéro de devis de l'année en cours pour cet utilisateur
+    last_quote = db.query(Invoice).filter(
+        Invoice.user_id == user_id,
+        Invoice.is_quote == True,
+        Invoice.invoice_number.like(f"DEV-{year}-U{user_id}-%")
+    ).order_by(Invoice.invoice_number.desc()).first()
+    
+    if last_quote and last_quote.invoice_number:
+        # Extraire le numéro et incrémenter
+        try:
+            last_num = int(last_quote.invoice_number.split('-')[-1])
+            next_num = last_num + 1
+        except (ValueError, IndexError):
+            next_num = 1
+    else:
+        next_num = 1
+    
+    # Format: DEV-2025-U3-00001 (avec l'ID utilisateur)
+    return f"DEV-{year}-U{user_id}-{next_num:05d}"
 
 
-@router.get("/", response_model=List[InvoiceResponse])
+@router.get("/", response_model=PaginatedResponse[InvoiceResponse])
 def get_invoices(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     status: str = None,
     is_quote: bool = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Récupérer la liste des factures/devis
+    Récupérer la liste des factures/devis avec pagination
     """
+    skip = (page - 1) * page_size
+    
     query = db.query(Invoice).filter(Invoice.user_id == current_user.id)
     
     if status:
@@ -63,9 +94,17 @@ def get_invoices(
     if is_quote is not None:
         query = query.filter(Invoice.is_quote == is_quote)
     
-    invoices = query.order_by(Invoice.date.desc()).offset(skip).limit(limit).all()
+    total = query.count()
+    invoices = query.order_by(Invoice.date.desc()).offset(skip).limit(page_size).all()
+    total_pages = math.ceil(total / page_size) if total > 0 else 0
     
-    return invoices
+    return {
+        "items": invoices,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
 
 
 @router.get("/{invoice_id}", response_model=InvoiceResponse)
@@ -112,8 +151,10 @@ def create_invoice(
             detail="Client non trouvé"
         )
     
-    # Générer le numéro de facture
-    if invoice_data.is_quote:
+    # Utiliser le numéro de facture fourni ou en générer un nouveau
+    if invoice_data.invoice_number:
+        invoice_number = invoice_data.invoice_number
+    elif invoice_data.is_quote:
         invoice_number = generate_quote_number(db, current_user.id)
     else:
         invoice_number = generate_invoice_number(db, current_user.id)
@@ -146,19 +187,32 @@ def create_invoice(
     default_status = 'draft' if invoice_data.is_quote else 'unpaid'
     invoice_status = invoice_data.status if hasattr(invoice_data, 'status') and invoice_data.status else default_status
     
+    # Gérer le taux de change et le total en DZD
+    if invoice_data.currency == 'DZD':
+        exchange_rate = Decimal(1)
+    else:
+        if not hasattr(invoice_data, 'exchange_rate') or invoice_data.exchange_rate is None or Decimal(invoice_data.exchange_rate) <= 0:
+            raise HTTPException(status_code=400, detail="Exchange rate is required and must be > 0 for non-DZD invoices.")
+        exchange_rate = Decimal(invoice_data.exchange_rate)
+    total_dzd = total_ttc * exchange_rate
+
     invoice = Invoice(
         user_id=current_user.id,
         client_id=invoice_data.client_id,
         invoice_number=invoice_number,
         date=invoice_data.date,
         due_date=invoice_data.due_date,
+        currency=invoice_data.currency,
+        language=invoice_data.language,
         total_ht=total_ht,
         tva_rate=global_tva_rate,
         tva_amount=total_tva,
         total_ttc=total_ttc,
         notes=invoice_data.notes,
         is_quote=invoice_data.is_quote,
-        status=invoice_status
+        status=invoice_status,
+        exchange_rate=exchange_rate,
+        total_dzd=total_dzd
     )
     
     db.add(invoice)
@@ -180,6 +234,15 @@ def create_invoice(
     
     db.commit()
     db.refresh(invoice)
+    
+    # Créer une notification
+    create_invoice_notification(
+        db=db,
+        user_id=current_user.id,
+        invoice_number=invoice.invoice_number,
+        client_name=client.name,
+        is_quote=invoice.is_quote
+    )
     
     return invoice
 
@@ -303,13 +366,16 @@ def download_invoice_pdf(
         'entreprise_name': current_user.entreprise_name or current_user.name,
         'address': current_user.address,
         'nif': current_user.nif,
-        'phone': current_user.phone
+        'rc_number': current_user.rc_number,
+        'phone': current_user.phone,
+        'logo_url': current_user.logo_url
     }
     
     client_data = {
         'name': invoice.client.name,
         'address': invoice.client.address,
-        'nif': invoice.client.nif
+        'nif': invoice.client.nif,
+        'rc_number': invoice.client.rc_number
     }
     
     invoice_data_dict = {
@@ -317,12 +383,23 @@ def download_invoice_pdf(
         'date': invoice.date,
         'due_date': invoice.due_date,
         'is_quote': invoice.is_quote,
+        # Ajouter devise et langue pour que le PDF reflète le choix utilisateur
+        'currency': invoice.currency,
+        'language': invoice.language,
         'total_ht': invoice.total_ht,
         'tva_rate': invoice.tva_rate,
         'tva_amount': invoice.tva_amount,
         'total_ttc': invoice.total_ttc,
         'notes': invoice.notes
     }
+
+    # DEBUG: affichage console pour vérifier passage des valeurs
+    try:
+        print("🧪 Génération PDF -> invoice_number:", invoice.invoice_number)
+        print("   Devise utilisée:", invoice.currency)
+        print("   Langue utilisée:", invoice.language)
+    except Exception as _e:
+        pass
     
     items = [
         {
@@ -384,11 +461,16 @@ def convert_quote_to_invoice(
         invoice_number=invoice_number,
         date=date.today(),
         due_date=quote.due_date,
+        currency=quote.currency,  # Copier la devise
+        language=quote.language,
+        exchange_rate=quote.exchange_rate,  # Copier le taux de change
+        total_dzd=quote.total_dzd,  # Copier le total en DZD
         total_ht=quote.total_ht,
         tva_rate=quote.tva_rate,
         tva_amount=quote.tva_amount,
         total_ttc=quote.total_ttc,
         notes=quote.notes,
+        status="unpaid",  # Définir le statut comme non payé
         is_quote=False
     )
     
@@ -406,6 +488,9 @@ def convert_quote_to_invoice(
             total=quote_item.total
         )
         db.add(item)
+    
+    # Marquer le devis comme converti
+    quote.status = "converted"
     
     db.commit()
     db.refresh(invoice)

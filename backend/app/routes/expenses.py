@@ -1,23 +1,24 @@
 """
 Routes pour la gestion des dépenses
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
+import math
 
 from ..database import get_db
 from ..models import User, Expense
-from ..schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse
+from ..schemas import ExpenseCreate, ExpenseUpdate, ExpenseResponse, PaginatedResponse
 from ..utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 
 
-@router.get("/", response_model=List[ExpenseResponse])
+@router.get("/", response_model=PaginatedResponse[ExpenseResponse])
 def get_expenses(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Items per page"),
     category: str = None,
     start_date: date = None,
     end_date: date = None,
@@ -25,8 +26,10 @@ def get_expenses(
     db: Session = Depends(get_db)
 ):
     """
-    Récupérer la liste des dépenses
+    Récupérer la liste des dépenses avec pagination
     """
+    skip = (page - 1) * page_size
+    
     query = db.query(Expense).filter(Expense.user_id == current_user.id)
     
     if category:
@@ -38,6 +41,17 @@ def get_expenses(
     if end_date:
         query = query.filter(Expense.date <= end_date)
     
+    total = query.count()
+    expenses = query.order_by(Expense.date.desc()).offset(skip).limit(page_size).all()
+    total_pages = math.ceil(total / page_size) if total > 0 else 0
+    
+    return {
+        "items": expenses,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
     expenses = query.order_by(Expense.date.desc()).offset(skip).limit(limit).all()
     
     return expenses

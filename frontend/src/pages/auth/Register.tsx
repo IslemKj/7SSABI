@@ -176,7 +176,7 @@ const Register = () => {
                 Créer un compte
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, mb: 2 }}>
-                Rejoignez 7SSABI et simplifiez votre gestion
+                Rejoignez Involeo et simplifiez votre gestion
               </Typography>
               
               {/* Avantages */}

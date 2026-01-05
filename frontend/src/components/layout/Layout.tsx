@@ -198,7 +198,7 @@
 /**
  * Layout principal avec sidebar - Design Moderne
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -232,8 +232,11 @@ import {
   KeyboardArrowDown,
   Notifications,
   ShowChart as AnalyticsIcon,
+  HelpOutline as HelpIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/store/authStore';
+import NotificationMenu from '@/components/notifications/NotificationMenu';
 
 const drawerWidth = 280;
 
@@ -241,6 +244,7 @@ interface MenuItem {
   text: string;
   icon: React.ReactNode;
   path: string;
+  adminOnly?: boolean;
 }
 
 const menuItems: MenuItem[] = [
@@ -248,8 +252,11 @@ const menuItems: MenuItem[] = [
   { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Clients', icon: <PeopleIcon />, path: '/clients' },
   { text: 'Produits', icon: <InventoryIcon />, path: '/products' },
-  { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },
+  { text: 'Factures et Devis', icon: <ReceiptIcon />, path: '/invoices' },
   { text: 'Dépenses', icon: <AccountBalanceIcon />, path: '/expenses' },
+  { text: 'Profil', icon: <PeopleIcon />, path: '/profile' },
+  { text: 'Aide', icon: <HelpIcon />, path: '/help' },
+  { text: 'Administration', icon: <AdminIcon />, path: '/admin/users', adminOnly: true },
 ];
 
 const Layout = () => {
@@ -258,9 +265,17 @@ const Layout = () => {
   const theme = useTheme();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const loadUser = useAuthStore((state) => state.loadUser);
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    // Load user data on mount if not already loaded
+    if (!user) {
+      loadUser();
+    }
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -333,61 +348,26 @@ const Layout = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
-            mb: 1,
+            justifyContent: 'center',
           }}
         >
-          <Box
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 2.5,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 8px 16px rgba(102, 126, 234, 0.3)',
+          <img
+            src="/logo.svg"
+            alt="Involeo"
+            style={{
+              width: '100%',
+              maxWidth: '220px',
+              height: 'auto',
             }}
-          >
-            <Typography
-              sx={{
-                fontSize: '1.5rem',
-                fontWeight: 800,
-                color: 'white',
-              }}
-            >
-              7
-            </Typography>
-          </Box>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 800,
-              color: 'white',
-              letterSpacing: 1,
-            }}
-          >
-            7SSABI
-          </Typography>
+          />
         </Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontWeight: 500,
-            letterSpacing: 0.5,
-            textTransform: 'uppercase',
-          }}
-        >
-          Gestion & Comptabilité
-        </Typography>
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', mx: 2 }} />
 
       {/* Menu Items */}
       <List sx={{ px: 2, py: 3, flex: 1, position: 'relative', zIndex: 1 }}>
-        {menuItems.map((item) => {
+        {menuItems.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => {
           const active = isActive(item.path);
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
@@ -558,20 +538,7 @@ const Layout = () => {
           </Box>
 
           {/* Notifications */}
-          <IconButton
-            sx={{
-              mr: 2,
-              color: '#64748b',
-              '&:hover': {
-                bgcolor: alpha('#667eea', 0.1),
-                color: '#667eea',
-              },
-            }}
-          >
-            <Badge badgeContent={3} color="error">
-              <Notifications />
-            </Badge>
-          </IconButton>
+          <NotificationMenu />
 
           {/* Menu utilisateur */}
           <Box

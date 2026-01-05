@@ -1,0 +1,2 @@
+PS C:\Users\bakir\Desktop\7SSABI\backend> uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+PS C:\Users\bakir\Desktop\7SSABI\frontend> npm run dev

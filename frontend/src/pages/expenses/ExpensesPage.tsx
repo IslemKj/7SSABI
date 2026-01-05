@@ -299,6 +299,9 @@ import { fr } from 'date-fns/locale';
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -312,12 +315,14 @@ const ExpensesPage = () => {
 
   useEffect(() => {
     loadExpenses();
-  }, []);
+  }, [page, pageSize]);
 
   const loadExpenses = async () => {
     try {
-      const data = await expenseService.getAll();
-      setExpenses(data);
+      setLoading(true);
+      const data = await expenseService.getAll(page, pageSize);
+      setExpenses(data.items);
+      setTotal(data.total);
     } catch (error) {
       console.error('Erreur chargement dépenses:', error);
     } finally {
@@ -441,7 +446,7 @@ const ExpensesPage = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* En-tête avec gradient */}
       <Box
         sx={{
@@ -494,7 +499,7 @@ const ExpensesPage = () => {
                   fontSize: { xs: '1.5rem', sm: '2rem' },
                 }}
               >
-                {totalExpenses.toLocaleString('fr-DZ')} DA
+                {totalExpenses.toLocaleString('fr-FR')} DA
               </Typography>
               <Chip
                 icon={<TrendingDown sx={{ fontSize: 16 }} />}
@@ -581,7 +586,7 @@ const ExpensesPage = () => {
                     </Box>
                   </Box>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
-                    {amount.toLocaleString('fr-DZ')} DA
+                    {amount.toLocaleString('fr-FR')} DA
                   </Typography>
                 </CardContent>
               </Card>
@@ -648,7 +653,9 @@ const ExpensesPage = () => {
           borderRadius: 3,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden',
+          overflow: 'auto',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <Table>
@@ -842,7 +849,7 @@ const ExpensesPage = () => {
                         fontSize: '1rem',
                       }}
                     >
-                      {expense.amount.toLocaleString('fr-DZ')} DA
+                      {expense.amount.toLocaleString('fr-FR')} DA
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
@@ -885,6 +892,48 @@ const ExpensesPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Pagination */}
+      {total > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mt: 3,
+            p: 2,
+            bgcolor: alpha('#ef4444', 0.03),
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Affichage de {(page - 1) * pageSize + 1} à {Math.min(page * pageSize, total)} sur {total} dépenses
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Précédent
+            </Button>
+            <Typography variant="body2" sx={{ px: 2 }}>
+              Page {page} sur {Math.ceil(total / pageSize)}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={page >= Math.ceil(total / pageSize)}
+              onClick={() => setPage(page + 1)}
+              sx={{ borderRadius: 1.5 }}
+            >
+              Suivant
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       {/* Dialog de formulaire moderne */}
       <Dialog

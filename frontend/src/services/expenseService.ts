@@ -2,19 +2,19 @@
  * Service Dépenses
  */
 import api from './api';
-import type { Expense, ExpenseFormData } from '@/types';
+import type { Expense, ExpenseFormData, PaginatedResponse } from '@/types';
 
 export const expenseService = {
   /**
-   * Récupérer toutes les dépenses
+   * Récupérer toutes les dépenses avec pagination
    */
-  async getAll(category?: string, startDate?: string, endDate?: string): Promise<Expense[]> {
-    const params: any = {};
+  async getAll(page: number = 1, pageSize: number = 10, category?: string, startDate?: string, endDate?: string): Promise<PaginatedResponse<Expense>> {
+    const params: any = { page, page_size: pageSize };
     if (category) params.category = category;
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
     
-    const response = await api.get<Expense[]>('/api/expenses/', { params });
+    const response = await api.get<PaginatedResponse<Expense>>('/api/expenses/', { params });
     return response.data;
   },
 

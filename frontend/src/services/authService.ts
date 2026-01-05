@@ -54,4 +54,28 @@ export const authService = {
   getToken(): string | null {
     return localStorage.getItem(config.tokenKey);
   },
+
+  /**
+   * Demander une réinitialisation de mot de passe
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    await api.post('/api/password-reset/request', { email });
+  },
+
+  /**
+   * Vérifier la validité d'un token de réinitialisation
+   */
+  async verifyResetToken(token: string): Promise<void> {
+    await api.post(`/api/password-reset/verify-token?token=${token}`);
+  },
+
+  /**
+   * Confirmer la réinitialisation de mot de passe
+   */
+  async confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+    await api.post('/api/password-reset/confirm', {
+      token,
+      new_password: newPassword,
+    });
+  },
 };
