@@ -1,5 +1,6 @@
 /**
  * Configuration de l'application
+ * Environment variables are loaded at build time
  */
 
 export const config = {
