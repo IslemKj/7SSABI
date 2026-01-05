@@ -536,6 +536,8 @@
  * Modern & Responsive Design
  */
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Box,
   Button,
@@ -574,8 +576,10 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
+import { config } from '@/config/config';
 
 const LandingPage = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -586,11 +590,11 @@ const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleGetStarted = () => {
-    console.log('Navigate to /register');
+    navigate('/register');
   };
 
   const handleLogin = () => {
-    console.log('Navigate to /login');
+    navigate('/login');
   };
 
   const handleDemoRequest = async () => {
@@ -604,8 +608,12 @@ const LandingPage = () => {
     setSuccessMessage('');
 
     try {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await axios.post(`${config.apiUrl}/api/contact/demo-request`, {
+        email: demoEmail,
+        company_name: '',
+        phone: '',
+        message: 'Demande de démo depuis la page d\'accueil'
+      });
       
       setSuccessMessage('Merci! Nous vous contacterons très bientôt pour finaliser votre inscription.');
       setDemoEmail('');
