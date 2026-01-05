@@ -31,24 +31,22 @@ class DemoRequest(BaseModel):
 def request_demo(data: DemoRequest):
     """
     Handle demo/signup request from landing page
-    Return immediately, send email in background
+    Send email synchronously to debug
     """
     try:
-        # Send email in background (don't wait for it)
-        import threading
-        email_thread = threading.Thread(
-            target=send_demo_notification,
-            args=(data.email, data.name)
-        )
-        email_thread.daemon = True
-        email_thread.start()
+        logger.info(f"📥 Demo request received from {data.email}")
+        
+        # Send email synchronously for debugging
+        success = send_demo_notification(data.email, data.name)
+        
+        logger.info(f"Email send result: {success}")
         
         return {
             "success": True,
             "message": "Merci! Nous vous contacterons très bientôt pour finaliser votre inscription.",
         }
     except Exception as e:
-        logger.error(f"Error sending demo request: {e}")
+        logger.error(f"❌ Error in demo endpoint: {e}", exc_info=True)
         return {
             "success": True,
             "message": "Merci! Nous vous contacterons très bientôt.",
