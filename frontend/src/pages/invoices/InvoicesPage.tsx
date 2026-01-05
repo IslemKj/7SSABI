@@ -73,7 +73,7 @@ const InvoicesPage = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, _setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +131,7 @@ const InvoicesPage = () => {
   };
 
 
-  const handleConvertToInvoice = async (invoice) => {
+  const handleConvertToInvoice = async (invoice: Invoice) => {
     try {
       await invoiceService.convertToInvoice(invoice.id);
       alert('Le devis a été converti en facture avec succès.');

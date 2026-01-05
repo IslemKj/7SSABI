@@ -277,7 +277,7 @@ const ClientsPage = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, _setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -728,7 +728,7 @@ const ClientsPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredClients.map((client, index) => (
+              filteredClients.map((client) => (
                 <TableRow
                   key={client.id}
                   sx={{

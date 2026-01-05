@@ -51,7 +51,7 @@ import {
 } from '@mui/icons-material';
 import { productService } from '@/services/productService';
 import { config } from '@/config/config';
-import type { Product, ProductFormData } from '@/types';
+import type { Product } from '@/types';
 
 // Type local pour le formulaire acceptant des strings pendant la saisie
 interface ProductFormState {
@@ -68,7 +68,7 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, _setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);

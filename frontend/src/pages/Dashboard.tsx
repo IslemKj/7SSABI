@@ -525,8 +525,6 @@ interface StatCardProps {
 }
 
 const StatCard = ({ title, value, icon, color, subtitle, trend }: StatCardProps) => {
-  const theme = useTheme();
-  
   return (
     <Card
       elevation={0}
@@ -713,8 +711,6 @@ const Dashboard = () => {
       setActivityLoading(false);
     }
   };
-
-  const theme = useTheme();
 
   if (loading) {
     return (

@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
         try {
-          const { user, token } = await authService.login(credentials);
+          const { user: _user, token } = await authService.login(credentials);
           set({
             token,
             isAuthenticated: true,
@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterRequest) => {
         set({ isLoading: true, error: null });
         try {
-          const user = await authService.register(data);
+          const _user = await authService.register(data);
           set({ isLoading: false });
         } catch (error: any) {
           const message = error.response?.data?.detail || "Erreur d'inscription";

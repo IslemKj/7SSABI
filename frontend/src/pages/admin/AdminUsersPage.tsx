@@ -36,7 +36,6 @@ import {
   Delete as DeleteIcon,
   AdminPanelSettings as AdminIcon,
   PersonOff as PersonOffIcon,
-  TrendingUp as TrendingUpIcon,
   Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import { adminService } from '@/services/adminService';
@@ -48,7 +47,7 @@ const AdminUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, _setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);

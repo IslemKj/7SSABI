@@ -578,7 +578,6 @@ import {
 const LandingPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   
   const [demoEmail, setDemoEmail] = useState('');
   const [loading, setLoading] = useState(false);

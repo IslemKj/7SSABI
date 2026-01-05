@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   useTheme,
-  alpha,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -43,7 +42,6 @@ import api from '@/services/api';
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 const DashboardAnalytics = () => {
-  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrendData[]>([]);
   const [topClients, setTopClients] = useState<TopClient[]>([]);
@@ -185,7 +183,7 @@ const DashboardAnalytics = () => {
                 )}
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                {kpis?.growth_percentage >= 0 ? '+' : ''}{kpis?.growth_percentage.toFixed(1)}%
+                {(kpis?.growth_percentage ?? 0) >= 0 ? '+' : ''}{(kpis?.growth_percentage ?? 0).toFixed(1)}%
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
                 Croissance vs Mois Dernier
@@ -306,7 +304,7 @@ const DashboardAnalytics = () => {
                   fill="#8884d8"
                   dataKey="revenue"
                 >
-                  {topClients.map((entry, index) => (
+                  {topClients.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

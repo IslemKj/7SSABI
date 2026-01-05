@@ -24,7 +24,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
-  LocationOn as LocationIcon,
   HelpOutline as HelpIcon,
   QuestionAnswer as QuestionAnswerIcon,
   Send as SendIcon,
