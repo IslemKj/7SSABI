@@ -43,3 +43,9 @@ coverage/
 *.bak
 *.tmp
 .temp/
+
+# Large media files
+*.mp4
+*.mov
+*.avi
+*.mkv

@@ -10,7 +10,8 @@
 1. Go to railway.app and click "New Project"
 2. Select "Deploy from GitHub repo"
 3. Choose your repository
-4. Railway will auto-detect Python and deploy backend
+4. Railway will use the `nixpacks.toml` and `start.sh` to deploy the backend
+5. Wait for deployment to complete (check logs)
 
 ### 2. Add PostgreSQL Database
 1. In your Railway project, click "New"
