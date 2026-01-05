@@ -59,6 +59,10 @@ def send_demo_notification(contact_email: str, name: str = ""):
     """
     Send email notification to admin when someone requests demo/signup
     """
+    logger.info(f"🔔 Starting email send for demo request from {contact_email}")
+    logger.info(f"📧 Sending to: {settings.CONTACT_EMAIL}")
+    logger.info(f"📤 SMTP Config: {settings.SMTP_HOST}:{settings.SMTP_PORT}, User: {settings.SMTP_USERNAME}")
+    
     name_text = f"Nom: {name}\n" if name else ""
     text_content = f"""
 Nouvelle demande d'inscription Involeo
@@ -136,10 +140,12 @@ Involeo - Notification automatique
         )
         
         if success:
-            logger.info(f"Demo request notification sent for {contact_email}")
+            logger.info(f"✅ Demo request notification sent successfully for {contact_email}")
+        else:
+            logger.error(f"❌ Failed to send demo notification for {contact_email}")
         return success
     except Exception as e:
-        logger.error(f"Failed to send demo notification: {e}")
+        logger.error(f"❌ Exception sending demo notification: {e}", exc_info=True)
         return False
 
 
