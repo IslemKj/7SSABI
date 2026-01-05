@@ -218,7 +218,6 @@ import {
   MenuItem,
   alpha,
   useTheme,
-  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -230,7 +229,6 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon,
   KeyboardArrowDown,
-  Notifications,
   ShowChart as AnalyticsIcon,
   HelpOutline as HelpIcon,
   AdminPanelSettings as AdminIcon,
@@ -262,7 +260,6 @@ const menuItems: MenuItem[] = [
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const loadUser = useAuthStore((state) => state.loadUser);

@@ -488,7 +488,6 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   Card,
   CardContent,
@@ -496,7 +495,6 @@ import {
   Avatar,
   Chip,
   LinearProgress,
-  useTheme,
   alpha,
   Container,
 } from '@mui/material';

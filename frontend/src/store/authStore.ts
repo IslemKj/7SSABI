@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterRequest) => {
         set({ isLoading: true, error: null });
         try {
-          const _user = await authService.register(data);
+          await authService.register(data);
           set({ isLoading: false });
         } catch (error: any) {
           const message = error.response?.data?.detail || "Erreur d'inscription";

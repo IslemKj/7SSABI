@@ -18,9 +18,7 @@ import {
 import {
   Notifications as NotificationsIcon,
   Receipt as ReceiptIcon,
-  Person as PersonIcon,
   AttachMoney as MoneyIcon,
-  CheckCircle as CheckCircleIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
