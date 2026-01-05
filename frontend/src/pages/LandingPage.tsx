@@ -608,11 +608,9 @@ const LandingPage = () => {
     setSuccessMessage('');
 
     try {
-      await axios.post(`${config.apiUrl}/api/contact/demo-request`, {
+      await axios.post(`${config.apiUrl}/api/contact/demo`, {
         email: demoEmail,
-        company_name: '',
-        phone: '',
-        message: 'Demande de démo depuis la page d\'accueil'
+        name: ''
       });
       
       setSuccessMessage('Merci! Nous vous contacterons très bientôt pour finaliser votre inscription.');
