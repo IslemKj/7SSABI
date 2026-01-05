@@ -4,7 +4,7 @@
 
 **Backend Railway:** `https://7ssabi-production.up.railway.app`
 
-**Frontend Vercel:** (à compléter avec votre URL)
+**Frontend Vercel:** `https://www.involeo.com`
 
 ---
 
@@ -32,13 +32,15 @@ SMTP_FROM_EMAIL=votre@email.com
 CONTACT_EMAIL=contact@involeo.com
 ```
 
-**Après avoir ajouté votre URL Vercel, ajoutez aussi:**
+**Après avoir ajouté PostgreSQL, ajoutez aussi ces variables:**
 
 ```
-FRONTEND_URL=https://votre-app.vercel.app
+FRONTEND_URL=https://www.involeo.com
 
-CORS_ORIGINS=["https://votre-app.vercel.app","http://localhost:5173"]
+CORS_ORIGINS=["https://www.involeo.com","https://involeo.com","http://localhost:5173"]
 ```
+
+**Note:** On inclut à la fois `www.involeo.com` et `involeo.com` pour que les deux fonctionnent.
 
 ---
 
