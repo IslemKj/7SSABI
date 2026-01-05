@@ -217,7 +217,6 @@ import {
   Menu,
   MenuItem,
   alpha,
-  useTheme,
 } from '@mui/material';
 import {
   Menu as MenuIcon,

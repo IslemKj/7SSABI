@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  useTheme,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
