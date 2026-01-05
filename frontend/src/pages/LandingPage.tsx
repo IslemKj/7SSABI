@@ -1415,6 +1415,7 @@ const LandingPage = () => {
                   Inscription
                 </Button>
                 <Button 
+                  onClick={() => navigate('/help')}
                   sx={{ 
                     color: 'rgba(255,255,255,0.7)', 
                     justifyContent: 'flex-start',
@@ -1424,6 +1425,7 @@ const LandingPage = () => {
                   Conditions d'utilisation
                 </Button>
                 <Button 
+                  onClick={() => navigate('/help')}
                   sx={{ 
                     color: 'rgba(255,255,255,0.7)', 
                     justifyContent: 'flex-start',
