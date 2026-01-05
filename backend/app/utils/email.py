@@ -45,8 +45,8 @@ def send_email(
         part2 = MIMEText(body_html, 'html')
         msg.attach(part2)
         
-        # Connect to Zoho SMTP server
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        # Connect to Zoho SMTP server with timeout
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:
             server.starttls()
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             server.send_message(msg)

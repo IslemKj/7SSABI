@@ -31,15 +31,20 @@ class DemoRequest(BaseModel):
 def request_demo(data: DemoRequest):
     """
     Handle demo/signup request from landing page
-    Send email synchronously to debug
+    Return immediately, send email in background
     """
     try:
         logger.info(f"📥 Demo request received from {data.email}")
         
-        # Send email synchronously for debugging
-        success = send_demo_notification(data.email, data.name)
-        
-        logger.info(f"Email send result: {success}")
+        # Send email in background (don't block response)
+        import threading
+        email_thread = threading.Thread(
+            target=send_demo_notification,
+            args=(data.email, data.name)
+        )
+        email_thread.daemon = True
+        email_thread.start()
+        logger.info(f"📨 Email thread started for {data.email}")
         
         return {
             "success": True,
