@@ -1,6 +1,7 @@
 /**
  * Configuration de l'application
  * Environment variables are loaded at build time
+ * Make sure VITE_API_URL uses HTTPS in production
  */
 
 export const config = {

@@ -9,6 +9,7 @@ import math
 
 from ..database import get_db
 from ..models import User, Invoice, Client, Product, Expense
+from ..models.contact_request import ContactRequest
 from ..schemas import UserResponse, UserStats, PaginatedResponse
 from ..utils.admin import get_current_admin_user
 
@@ -232,3 +233,67 @@ def delete_user(
         "success": True,
         "message": "Utilisateur supprimé avec succès"
     }
+
+
+@router.get("/contact-requests/")
+def get_contact_requests(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    unprocessed_only: bool = Query(False),
+    current_admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all contact/demo requests (admin only)
+    """
+    skip = (page - 1) * page_size
+    
+    query = db.query(ContactRequest)
+    if unprocessed_only:
+        query = query.filter(ContactRequest.is_processed == False)
+    
+    total = query.count()
+    requests = query.order_by(ContactRequest.created_at.desc()).offset(skip).limit(page_size).all()
+    
+    return {
+        "items": [
+            {
+                "id": r.id,
+                "email": r.email,
+                "name": r.name,
+                "subject": r.subject,
+                "message": r.message,
+                "request_type": r.request_type,
+                "created_at": r.created_at,
+                "is_processed": r.is_processed,
+                "notes": r.notes
+            }
+            for r in requests
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total > 0 else 0
+    }
+
+
+@router.patch("/contact-requests/{request_id}/process")
+def mark_request_processed(
+    request_id: int,
+    notes: str = None,
+    current_admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Mark a contact request as processed (admin only)
+    """
+    contact = db.query(ContactRequest).filter(ContactRequest.id == request_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    contact.is_processed = True
+    if notes:
+        contact.notes = notes
+    db.commit()
+    
+    return {"success": True, "message": "Request marked as processed"}

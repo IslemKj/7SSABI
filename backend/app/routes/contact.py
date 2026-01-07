@@ -1,10 +1,13 @@
 """
 Routes pour le formulaire de contact
 """
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from ..utils.email import send_contact_form_email, send_email
 from ..config import settings
+from ..database import get_db
+from ..models.contact_request import ContactRequest
 from datetime import datetime
 import logging
 
@@ -28,30 +31,34 @@ class DemoRequest(BaseModel):
 
 
 @router.post("/demo", status_code=status.HTTP_200_OK)
-def request_demo(data: DemoRequest):
+def request_demo(data: DemoRequest, db: Session = Depends(get_db)):
     """
     Handle demo/signup request from landing page
-    Return immediately, send email in background
+    Store in database instead of sending email
     """
     try:
         logger.info(f"📥 Demo request received from {data.email}")
         
-        # Send email in background (don't block response)
-        import threading
-        email_thread = threading.Thread(
-            target=send_demo_notification,
-            args=(data.email, data.name)
+        # Store in database
+        contact = ContactRequest(
+            email=data.email,
+            name=data.name,
+            request_type="demo",
+            subject="Demande d'inscription",
+            message=f"Demande d'inscription Premium (5,000 DA/mois)"
         )
-        email_thread.daemon = True
-        email_thread.start()
-        logger.info(f"📨 Email thread started for {data.email}")
+        db.add(contact)
+        db.commit()
+        
+        logger.info(f"✅ Demo request stored in database for {data.email}")
         
         return {
             "success": True,
             "message": "Merci! Nous vous contacterons très bientôt pour finaliser votre inscription.",
         }
     except Exception as e:
-        logger.error(f"❌ Error in demo endpoint: {e}", exc_info=True)
+        logger.error(f"❌ Error storing demo request: {e}", exc_info=True)
+        db.rollback()
         return {
             "success": True,
             "message": "Merci! Nous vous contacterons très bientôt.",
