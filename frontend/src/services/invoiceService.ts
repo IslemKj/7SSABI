@@ -52,7 +52,7 @@ export const invoiceService = {
    * Télécharger le PDF d'une facture
    */
   async downloadPDF(id: number): Promise<Blob> {
-    const response = await api.get(`/api/invoices/${id}/pdf/`, {
+    const response = await api.get(`/api/invoices/${id}/pdf`, {
       responseType: 'blob',
     });
     return response.data;
