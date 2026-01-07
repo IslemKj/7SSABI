@@ -18,6 +18,7 @@ import ExpensesPage from '@/pages/expenses/ExpensesPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import HelpPage from '@/pages/help/HelpPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
+import ContactRequestsPage from '@/pages/admin/ContactRequestsPage';
 import TermsPage from '@/pages/legal/TermsPage';
 import PrivacyPage from '@/pages/legal/PrivacyPage';
 
@@ -85,6 +86,7 @@ const AppRoutes = () => {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="help" element={<HelpPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
+        <Route path="admin/contacts" element={<ContactRequestsPage />} />
       </Route>
 
       {/* Redirection par défaut */}

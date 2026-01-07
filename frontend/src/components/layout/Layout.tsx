@@ -253,7 +253,8 @@ const menuItems: MenuItem[] = [
   { text: 'Dépenses', icon: <AccountBalanceIcon />, path: '/expenses' },
   { text: 'Profil', icon: <PeopleIcon />, path: '/profile' },
   { text: 'Aide', icon: <HelpIcon />, path: '/help' },
-  { text: 'Administration', icon: <AdminIcon />, path: '/admin/users', adminOnly: true },
+  { text: 'Utilisateurs', icon: <AdminIcon />, path: '/admin/users', adminOnly: true },
+  { text: 'Demandes Contact', icon: <AdminIcon />, path: '/admin/contacts', adminOnly: true },
 ];
 
 const Layout = () => {
