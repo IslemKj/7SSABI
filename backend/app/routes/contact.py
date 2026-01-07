@@ -160,18 +160,15 @@ Involeo - Notification automatique
 
 
 @router.post("/send")
-async def send_contact_message(data: ContactFormRequest):
+async def send_contact_message(data: ContactFormRequest, db: Session = Depends(get_db)):
     """
-    Envoyer un message depuis le formulaire de contact
+    Store contact form message in database
     
     Args:
-        data: Données du formulaire de contact
+        data: Contact form data
     
     Returns:
-        dict: Message de confirmation
-    
-    Raises:
-        HTTPException: Si l'envoi de l'email échoue
+        dict: Confirmation message
     """
     try:
         # Validate input
@@ -193,21 +190,18 @@ async def send_contact_message(data: ContactFormRequest):
                 detail="Le message est requis"
             )
         
-        # Send email
-        success = send_contact_form_email(
-            name=data.name.strip(),
+        # Store in database instead of sending email
+        contact = ContactRequest(
             email=data.email,
+            name=data.name.strip(),
+            request_type="contact",
             subject=data.subject.strip(),
-            message=data.message.strip(),
+            message=data.message.strip()
         )
+        db.add(contact)
+        db.commit()
         
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erreur lors de l'envoi du message. Veuillez réessayer plus tard."
-            )
-        
-        logger.info(f"Contact form submitted by {data.name} ({data.email})")
+        logger.info(f"✅ Contact form submitted and stored: {data.name} ({data.email})")
         
         return {
             "success": True,
@@ -217,7 +211,12 @@ async def send_contact_message(data: ContactFormRequest):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error processing contact form: {str(e)}")
+        logger.error(f"❌ Error processing contact form: {str(e)}", exc_info=True)
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de l'envoi du message. Veuillez réessayer plus tard."
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Une erreur s'est produite lors de l'envoi du message"
