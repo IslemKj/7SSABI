@@ -590,7 +590,7 @@ const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleGetStarted = () => {
-    navigate('/register');
+    document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleLogin = () => {
@@ -760,7 +760,7 @@ const LandingPage = () => {
                   transition: 'all 0.3s',
                 }}
               >
-                Commencer
+                Demander l'accès
               </Button>
             </Box>
           )}
@@ -806,7 +806,7 @@ const LandingPage = () => {
                   '&:hover': { bgcolor: '#4f46e5' }
                 }}
               >
-                <ListItemText primary="Commencer" />
+                <ListItemText primary="Demander l'accès" />
               </ListItemButton>
             </ListItem>
           </List>
@@ -1410,7 +1410,7 @@ const LandingPage = () => {
                     '&:hover': { color: 'white' }
                   }}
                 >
-                  Inscription
+                  Demander l'accès
                 </Button>
                 <Button 
                   onClick={() => navigate('/help')}
