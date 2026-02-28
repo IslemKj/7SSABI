@@ -231,6 +231,8 @@ import {
   ShowChart as AnalyticsIcon,
   HelpOutline as HelpIcon,
   AdminPanelSettings as AdminIcon,
+  Calculate as CalculateIcon,
+  HourglassEmpty as DebtIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/store/authStore';
 import NotificationMenu from '@/components/notifications/NotificationMenu';
@@ -251,6 +253,8 @@ const menuItems: MenuItem[] = [
   { text: 'Produits', icon: <InventoryIcon />, path: '/products' },
   { text: 'Factures et Devis', icon: <ReceiptIcon />, path: '/invoices' },
   { text: 'Dépenses', icon: <AccountBalanceIcon />, path: '/expenses' },
+  { text: 'Outils Fiscaux', icon: <CalculateIcon />, path: '/fiscal' },
+  { text: 'Suivi Créances', icon: <DebtIcon />, path: '/creances' },
   { text: 'Profil', icon: <PeopleIcon />, path: '/profile' },
   { text: 'Aide', icon: <HelpIcon />, path: '/help' },
   { text: 'Utilisateurs', icon: <AdminIcon />, path: '/admin/users', adminOnly: true },

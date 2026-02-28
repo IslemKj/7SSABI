@@ -485,6 +485,7 @@
  * Page Dashboard - Design Moderne et Responsive
  */
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -497,6 +498,7 @@ import {
   LinearProgress,
   alpha,
   Container,
+  Button,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -509,8 +511,12 @@ import {
   ArrowUpward,
   ArrowDownward,
   Timeline,
+  Calculate as CalculateIcon,
+  HourglassEmpty as DebtIcon,
+  ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import { dashboardService } from '@/services/dashboardService';
+import api from '@/services/api';
 import type { DashboardStats } from '@/types';
 
 interface StatCardProps {
@@ -678,14 +684,17 @@ interface RecentActivity {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null);
   const [loading, setLoading] = useState(true);
   const [activityLoading, setActivityLoading] = useState(true);
+  const [fiscalStats, setFiscalStats] = useState<{ year_revenue_dzd: number; ceiling_services: number; ceiling_goods: number } | null>(null);
 
   useEffect(() => {
     loadStats();
     loadRecentActivity();
+    api.get('/api/dashboard/fiscal-stats').then(r => setFiscalStats(r.data)).catch(() => {});
   }, []);
 
   const loadStats = async () => {
@@ -863,6 +872,99 @@ const Dashboard = () => {
               subtitle="Total dépensé"
               trend={-3.2}
             />
+          </Grid>
+
+          {/* ── CA Plafond Tracker ── */}
+          {fiscalStats && (() => {
+            const ceiling = fiscalStats.ceiling_services; // default services
+            const pct = Math.min((fiscalStats.year_revenue_dzd / ceiling) * 100, 100);
+            const color = pct >= 90 ? '#ef4444' : pct >= 75 ? '#f59e0b' : '#10b981';
+            return (
+              <Grid item xs={12} md={8}>
+                <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: alpha(color, 0.3), background: alpha(color, 0.04), height: '100%' }}>
+                  <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
+                          Plafond CA — Auto-entrepreneur
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color }}>
+                          {Math.round(pct)}% du plafond services
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        endIcon={<ArrowForwardIcon />}
+                        onClick={() => navigate('/fiscal')}
+                        sx={{ color, textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', '&:hover': { bgcolor: alpha(color, 0.1) } }}
+                      >
+                        Outils fiscaux
+                      </Button>
+                    </Box>
+                    <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {fiscalStats.year_revenue_dzd.toLocaleString('fr-FR')} DA encaissés
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Plafond : {ceiling.toLocaleString('fr-FR')} DA
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={pct}
+                      sx={{
+                        height: 12, borderRadius: 6, mb: 1,
+                        bgcolor: alpha(color, 0.15),
+                        '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 6 }
+                      }}
+                    />
+                    {pct >= 75 && (
+                      <Typography variant="caption" sx={{ color, fontWeight: 600 }}>
+                        ⚠️ {pct >= 90 ? 'Vous approchez du plafond légal !' : 'Attention : 75% du plafond atteint'}
+                      </Typography>
+                    )}
+                    {pct < 75 && (
+                      <Typography variant="caption" color="text.secondary">
+                        Reste : {(ceiling - fiscalStats.year_revenue_dzd).toLocaleString('fr-FR')} DA avant le plafond
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })()}
+
+          {/* ── Quick link: Suivi Créances ── */}
+          <Grid item xs={12} md={4}>
+            <Card
+              elevation={0}
+              onClick={() => navigate('/creances')}
+              sx={{
+                borderRadius: 3, border: '1px solid', borderColor: alpha('#f59e0b', 0.25),
+                background: alpha('#f59e0b', 0.04), cursor: 'pointer', height: '100%',
+                transition: 'all 0.2s',
+                '&:hover': { transform: 'translateY(-4px)', boxShadow: `0 12px 24px ${alpha('#f59e0b', 0.15)}`, borderColor: '#f59e0b' }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2.5, sm: 3 }, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: 2.5, bgcolor: alpha('#f59e0b', 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <DebtIcon sx={{ color: '#f59e0b', fontSize: 24 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.875rem' }}>Suivi des Créances</Typography>
+                    <Typography variant="caption" color="text.secondary">Factures impayées &amp; relances</Typography>
+                  </Box>
+                </Box>
+                <Typography variant="caption" color="text.secondary">
+                  Visualisez le vieillissement de vos créances et envoyez des relances WhatsApp en 1 clic.
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: '#f59e0b' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700 }}>Voir le rapport</Typography>
+                  <ArrowForwardIcon sx={{ fontSize: 14 }} />
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
 
           {/* Bénéfice net */}

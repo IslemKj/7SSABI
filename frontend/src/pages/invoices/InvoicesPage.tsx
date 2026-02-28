@@ -44,6 +44,7 @@ import {
   Cancel as CancelIcon,
   HourglassEmpty as HourglassIcon,
   TrendingUp as TrendingUpIcon,
+  WhatsApp as WhatsAppIcon,
 } from '@mui/icons-material';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types';
@@ -156,6 +157,17 @@ const InvoicesPage = () => {
         alert('Erreur lors de la suppression de la facture');
       }
     }
+  };
+
+  const handleShareWhatsApp = (invoice: Invoice) => {
+    const symbol = getCurrencySymbol(invoice.currency);
+    const due = invoice.due_date
+      ? new Date(invoice.due_date).toLocaleDateString('fr-FR')
+      : new Date(invoice.date).toLocaleDateString('fr-FR');
+    const label = invoice.is_quote ? 'devis' : 'facture';
+    const statusLabel = invoice.status === 'paid' ? 'a été payée' : 'reste à régler';
+    const msg = `Bonjour,\n\nVotre ${label} N°${invoice.invoice_number} d'un montant de ${invoice.total_ttc.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} ${symbol} ${statusLabel}.${invoice.status !== 'paid' ? `\nÉchéance : ${due}` : ''}\n\nMerci pour votre confiance.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleDownloadPDF = async (id: number) => {
@@ -930,6 +942,22 @@ const InvoicesPage = () => {
                           <ReceiptIcon fontSize="small" />
                         </IconButton>
                       )}
+                      <IconButton
+                        onClick={() => handleShareWhatsApp(invoice)}
+                        size="small"
+                        title="Partager via WhatsApp"
+                        sx={{
+                          bgcolor: alpha('#25d366', 0.1),
+                          color: '#25d366',
+                          '&:hover': {
+                            bgcolor: alpha('#25d366', 0.2),
+                            transform: 'scale(1.1)',
+                          },
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <WhatsAppIcon fontSize="small" />
+                      </IconButton>
                       <IconButton
                         onClick={() => handleDeleteInvoice(invoice.id, invoice.invoice_number)}
                         size="small"

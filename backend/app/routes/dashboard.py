@@ -324,6 +324,110 @@ def get_kpis(
     }
 
 
+@router.get("/fiscal-stats")
+def get_fiscal_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Récupérer les statistiques fiscales de l'année courante (IFU, plafond CA, CASNOS)
+    """
+    current_year = date.today().year
+
+    # CA de l'année courante (TOUTES les factures encaissées) en DZD
+    year_revenue = db.query(func.sum(Invoice.total_dzd)).filter(
+        Invoice.user_id == current_user.id,
+        Invoice.status == "paid",
+        Invoice.is_quote == False,
+        extract('year', Invoice.date) == current_year
+    ).scalar() or 0
+
+    # CA mensuel de l'année courante
+    monthly = []
+    for month in range(1, 13):
+        rev = db.query(func.sum(Invoice.total_dzd)).filter(
+            Invoice.user_id == current_user.id,
+            Invoice.status == "paid",
+            Invoice.is_quote == False,
+            extract('year', Invoice.date) == current_year,
+            extract('month', Invoice.date) == month
+        ).scalar() or 0
+        monthly.append({
+            "month": month,
+            "revenue": float(rev)
+        })
+
+    return {
+        "year": current_year,
+        "year_revenue_dzd": float(year_revenue),
+        "monthly_breakdown": monthly,
+        # Plafonds légaux auto-entrepreneur Algérie (en DZD)
+        "ceiling_services": 8_000_000,
+        "ceiling_goods": 15_000_000,
+    }
+
+
+@router.get("/debt-aging")
+def get_debt_aging(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Rapport de vieillissement des créances (factures impayées groupées par ancienneté)
+    """
+    today = date.today()
+
+    unpaid_invoices = db.query(Invoice).filter(
+        Invoice.user_id == current_user.id,
+        Invoice.status.in_(["unpaid", "partial"]),
+        Invoice.is_quote == False
+    ).order_by(Invoice.date.asc()).all()
+
+    buckets = {
+        "0_30": [],
+        "31_60": [],
+        "61_90": [],
+        "over_90": []
+    }
+
+    for inv in unpaid_invoices:
+        due = inv.due_date or inv.date
+        days_late = (today - due).days
+        remaining = float(inv.total_ttc) - float(inv.paid_amount)
+        record = {
+            "id": inv.id,
+            "invoice_number": inv.invoice_number,
+            "client_name": inv.client.name,
+            "date": inv.date.isoformat(),
+            "due_date": due.isoformat(),
+            "total_ttc": float(inv.total_ttc),
+            "paid_amount": float(inv.paid_amount),
+            "remaining": remaining,
+            "currency": inv.currency,
+            "total_dzd": float(inv.total_dzd),
+            "days_late": days_late
+        }
+        if days_late <= 30:
+            buckets["0_30"].append(record)
+        elif days_late <= 60:
+            buckets["31_60"].append(record)
+        elif days_late <= 90:
+            buckets["61_90"].append(record)
+        else:
+            buckets["over_90"].append(record)
+
+    total_outstanding = sum(
+        float(inv.total_ttc) - float(inv.paid_amount)
+        for inv in unpaid_invoices
+    )
+
+    return {
+        "total_outstanding_dzd": total_outstanding,
+        "total_invoices": len(unpaid_invoices),
+        "buckets": buckets
+    }
+
+
 @router.get("/export-pdf")
 def export_analytics_pdf(
     months: int = 6,

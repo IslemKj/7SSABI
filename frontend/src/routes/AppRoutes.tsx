@@ -21,6 +21,8 @@ import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import ContactRequestsPage from '@/pages/admin/ContactRequestsPage';
 import TermsPage from '@/pages/legal/TermsPage';
 import PrivacyPage from '@/pages/legal/PrivacyPage';
+import FiscalToolsPage from '@/pages/fiscal/FiscalToolsPage';
+import DebtAgingPage from '@/pages/fiscal/DebtAgingPage';
 
 /**
  * Route protégée
@@ -87,6 +89,8 @@ const AppRoutes = () => {
         <Route path="help" element={<HelpPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/contacts" element={<ContactRequestsPage />} />
+        <Route path="fiscal" element={<FiscalToolsPage />} />
+        <Route path="creances" element={<DebtAgingPage />} />
       </Route>
 
       {/* Redirection par défaut */}
