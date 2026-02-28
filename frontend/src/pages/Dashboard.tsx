@@ -511,7 +511,6 @@ import {
   ArrowUpward,
   ArrowDownward,
   Timeline,
-  Calculate as CalculateIcon,
   HourglassEmpty as DebtIcon,
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
