@@ -7,12 +7,10 @@ import {
   Box, Grid, Typography, Card, CardContent, Chip, LinearProgress,
   Select, MenuItem, FormControl, InputLabel, Divider, Alert,
   Table, TableBody, TableCell, TableHead, TableRow, TableContainer,
-  Paper, Tooltip, alpha, Container,
+  alpha, Container,
 } from '@mui/material';
 import {
   Calculate as CalculateIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
   Info as InfoIcon,
   TrendingUp as TrendingUpIcon,
   AccountBalance as AccountBalanceIcon,

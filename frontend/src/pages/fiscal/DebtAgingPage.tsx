@@ -3,16 +3,14 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  Box, Grid, Typography, Card, CardContent, Chip, Button, Alert,
+  Box, Grid, Typography, Card, CardContent, Chip, Button,
   Table, TableBody, TableCell, TableHead, TableRow, TableContainer,
-  Paper, alpha, Container, Divider, LinearProgress, Tooltip,
+  alpha, Container, Tooltip,
 } from '@mui/material';
 import {
-  Warning as WarningIcon,
   WhatsApp as WhatsAppIcon,
   HourglassEmpty as HourglassIcon,
   CheckCircle as OkIcon,
-  ErrorOutline as ErrorIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
