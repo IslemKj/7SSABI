@@ -4,8 +4,17 @@
  * Make sure VITE_API_URL uses HTTPS in production
  */
 
+// Upgrade http:// → https:// when page is served over HTTPS (avoids mixed content block)
+const rawApiUrl: string = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const safeApiUrl =
+  typeof window !== 'undefined' &&
+  window.location.protocol === 'https:' &&
+  rawApiUrl.startsWith('http://')
+    ? rawApiUrl.replace('http://', 'https://')
+    : rawApiUrl;
+
 export const config = {
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  apiUrl: safeApiUrl,
   appName: import.meta.env.VITE_APP_NAME || 'Involeo',
   tokenKey: 'involeo_token',
   userKey: 'involeo_user',
