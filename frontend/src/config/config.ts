@@ -4,15 +4,15 @@
  * Make sure VITE_API_URL uses HTTPS in production
  */
 
-// In production builds (import.meta.env.PROD = true), always force https://
-// This runs at build time so Vite bakes the correct URL into the bundle
-const rawApiUrl: string = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const safeApiUrl: string = import.meta.env.PROD
-  ? rawApiUrl.replace(/^http:\/\//, 'https://')
-  : rawApiUrl;
+// Hardcode the production URL as a literal so no platform env var can override it.
+// Vite replaces import.meta.env.PROD with `true` at build time, so the production
+// URL string is baked directly into the bundle — guaranteed to be https://.
+const apiUrl: string = import.meta.env.PROD
+  ? 'https://7ssabi-production.up.railway.app'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
 export const config = {
-  apiUrl: safeApiUrl,
+  apiUrl,
   appName: import.meta.env.VITE_APP_NAME || 'Involeo',
   tokenKey: 'involeo_token',
   userKey: 'involeo_user',
