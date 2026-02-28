@@ -49,3 +49,5 @@ coverage/
 *.mov
 *.avi
 *.mkv
+.vercel
+.env*.local
