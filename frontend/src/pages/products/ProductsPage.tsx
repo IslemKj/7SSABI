@@ -561,7 +561,59 @@ const ProductsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Tableau des produits */}
+      {/* Mobile card list — xs only */}
+      <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
+        {filteredProducts.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: alpha('#6366f1', 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <InventoryIcon sx={{ fontSize: 32, color: '#6366f1' }} />
+            </Box>
+            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+              {searchTerm ? 'Aucun produit trouvé' : 'Aucun produit enregistré'}
+            </Typography>
+          </Box>
+        ) : (
+          filteredProducts.map((product) => {
+            const unit_price = Number(product.unit_price) || 0;
+            const tvaRate = Number(product.tva_rate) || 0;
+            const priceTTC = unit_price * (1 + tvaRate / 100);
+            const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : product.currency === 'USD' ? '$' : 'DA';
+            return (
+              <Card key={product.id} elevation={0} sx={{ mb: 1.5, borderRadius: 2.5, border: '1px solid', borderColor: 'rgba(0,0,0,0.07)' }}>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                    <Avatar sx={{ width: 40, height: 40, bgcolor: alpha(getCategoryColor(product.category), 0.15), color: getCategoryColor(product.category) }}>
+                      {getCategoryIcon(product.category)}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</Typography>
+                      <Chip label={product.category === 'produit' ? 'Produit' : 'Service'} size="small" sx={{ mt: 0.25, bgcolor: alpha(getCategoryColor(product.category), 0.1), color: getCategoryColor(product.category), fontWeight: 600, height: 20, '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' } }} />
+                    </Box>
+                    <Typography variant="body1" sx={{ fontWeight: 800, color: '#1e293b', flexShrink: 0 }}>
+                      {priceTTC.toLocaleString('fr-FR')} {currencySymbol}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Chip icon={<PercentIcon sx={{ fontSize: 12 }} />} label={`TVA ${product.tva_rate}%`} size="small" sx={{ bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b', fontWeight: 600, height: 22 }} />
+                      {product.category === 'produit' && (
+                        <Chip icon={<InventoryIcon sx={{ fontSize: 12 }} />} label={`${product.stock || 0} u.`} size="small" sx={{ bgcolor: (product.stock || 0) > 10 ? alpha('#10b981', 0.1) : (product.stock || 0) > 0 ? alpha('#f59e0b', 0.1) : alpha('#ef4444', 0.1), color: (product.stock || 0) > 10 ? '#10b981' : (product.stock || 0) > 0 ? '#f59e0b' : '#ef4444', fontWeight: 600, height: 22 }} />
+                      )}
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton onClick={() => handleOpenDialog(product)} size="small" sx={{ bgcolor: alpha('#6366f1', 0.1), color: '#6366f1' }}><EditIcon fontSize="small" /></IconButton>
+                      <IconButton onClick={() => handleDelete(product.id)} size="small" sx={{ bgcolor: alpha('#ef4444', 0.1), color: '#ef4444' }}><DeleteIcon fontSize="small" /></IconButton>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </Box>
+
+      {/* Tableau des produits — sm+ only */}
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
       <TableContainer
         component={Paper}
         elevation={0}
@@ -889,14 +941,17 @@ const ProductsPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
 
       {/* Pagination */}
       {total > 0 && (
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 1,
             mt: 3,
             p: 2,
             bgcolor: alpha('#6366f1', 0.03),

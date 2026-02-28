@@ -645,7 +645,43 @@ const ExpensesPage = () => {
         </CardContent>
       </Card>
 
-      {/* Tableau des dépenses */}
+      {/* Mobile card list — xs only */}
+      <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
+        {filteredExpenses.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: alpha('#ef4444', 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <AccountBalanceIcon sx={{ fontSize: 32, color: '#ef4444' }} />
+            </Box>
+            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+              {searchTerm ? 'Aucune dépense trouvée' : 'Aucune dépense enregistrée'}
+            </Typography>
+          </Box>
+        ) : (
+          filteredExpenses.map((expense) => (
+            <Card key={expense.id} elevation={0} sx={{ mb: 1.5, borderRadius: 2.5, border: '1px solid', borderColor: 'rgba(0,0,0,0.07)' }}>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
+                  <Box>
+                    <Chip icon={<CategoryIcon sx={{ fontSize: 14 }} />} label={expense.category} size="small" sx={{ bgcolor: alpha(categoryColors[expense.category] || '#64748b', 0.1), color: categoryColors[expense.category] || '#64748b', fontWeight: 600, border: '1px solid', borderColor: alpha(categoryColors[expense.category] || '#64748b', 0.3) }} />
+                    <Typography variant="caption" sx={{ display: 'block', color: '#64748b', mt: 0.5 }}>{format(new Date(expense.date), 'dd/MM/yyyy', { locale: fr })}</Typography>
+                  </Box>
+                  <Typography variant="body1" sx={{ fontWeight: 800, color: '#ef4444' }}>{expense.amount.toLocaleString('fr-FR')} DA</Typography>
+                </Box>
+                {expense.description && (
+                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{expense.description}</Typography>
+                )}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                  <IconButton onClick={() => handleOpenDialog(expense)} size="small" sx={{ bgcolor: alpha('#6366f1', 0.1), color: '#6366f1' }}><EditIcon fontSize="small" /></IconButton>
+                  <IconButton onClick={() => handleDelete(expense.id)} size="small" sx={{ bgcolor: alpha('#ef4444', 0.1), color: '#ef4444' }}><DeleteIcon fontSize="small" /></IconButton>
+                </Box>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </Box>
+
+      {/* Tableau des dépenses — sm+ only */}
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
       <TableContainer
         component={Paper}
         elevation={0}
@@ -892,14 +928,17 @@ const ExpensesPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
 
       {/* Pagination */}
       {total > 0 && (
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 1,
             mt: 3,
             p: 2,
             bgcolor: alpha('#ef4444', 0.03),

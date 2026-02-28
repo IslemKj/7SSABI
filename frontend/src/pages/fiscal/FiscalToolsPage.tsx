@@ -373,7 +373,7 @@ const FiscalToolsPage = () => {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Détail mensuel — CA encaissé {stats?.year}
                 </Typography>
-                <TableContainer>
+                <TableContainer sx={{ overflowX: 'auto' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>

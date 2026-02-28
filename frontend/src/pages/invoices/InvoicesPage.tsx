@@ -626,7 +626,46 @@ const InvoicesPage = () => {
         </CardContent>
       </Card>
 
-      {/* Tableau des factures */}
+      {/* Mobile card list — xs only */}
+      <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
+        {filteredInvoices.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: alpha('#6366f1', 0.1), display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              {tabValue === 0 ? <ReceiptIcon sx={{ fontSize: 32, color: '#6366f1' }} /> : <DescriptionIcon sx={{ fontSize: 32, color: '#6366f1' }} />}
+            </Box>
+            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+              {searchTerm ? `Aucun${tabValue === 0 ? 'e facture' : ' devis'} trouvé${tabValue === 0 ? 'e' : ''}` : `Aucun${tabValue === 0 ? 'e facture' : ' devis'} enregistré${tabValue === 0 ? 'e' : ''}`}
+            </Typography>
+          </Box>
+        ) : (
+          filteredInvoices.map((invoice) => (
+            <Card key={invoice.id} elevation={0} sx={{ mb: 1.5, borderRadius: 2.5, border: '1px solid', borderColor: 'rgba(0,0,0,0.07)' }}>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#6366f1' }}>{invoice.invoice_number}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b' }}>{format(new Date(invoice.date), 'dd/MM/yyyy', { locale: fr })}</Typography>
+                  </Box>
+                  <Chip icon={getStatusIcon(invoice.status)} label={getStatusLabel(invoice.status)} size="small" sx={{ bgcolor: alpha(getStatusColor(invoice.status), 0.1), color: getStatusColor(invoice.status), fontWeight: 600, border: '1px solid', borderColor: alpha(getStatusColor(invoice.status), 0.3) }} />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#1e293b', fontSize: '1.1rem' }}>
+                    {(invoice.total_ttc || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {getCurrencySymbol(invoice.currency)}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <IconButton onClick={() => handleViewDetails(invoice)} size="small" sx={{ bgcolor: alpha('#6366f1', 0.1), color: '#6366f1' }}><ViewIcon fontSize="small" /></IconButton>
+                    <IconButton onClick={() => handleOpenDialog(invoice)} size="small" sx={{ bgcolor: alpha('#f59e0b', 0.1), color: '#f59e0b' }}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton onClick={() => handleDeleteInvoice(invoice.id, invoice.invoice_number)} size="small" sx={{ bgcolor: alpha('#ef4444', 0.1), color: '#ef4444' }}><DeleteIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </Box>
+
+      {/* Tableau des factures — sm+ only */}
+      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
       <TableContainer
         component={Paper}
         elevation={0}
@@ -985,14 +1024,17 @@ const InvoicesPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Box>
 
       {/* Pagination */}
       {total > 0 && (
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 1,
             mt: 3,
             p: 2,
             bgcolor: alpha('#6366f1', 0.03),
