@@ -4,14 +4,12 @@
  * Make sure VITE_API_URL uses HTTPS in production
  */
 
-// Upgrade http:// → https:// when page is served over HTTPS (avoids mixed content block)
+// In production builds (import.meta.env.PROD = true), always force https://
+// This runs at build time so Vite bakes the correct URL into the bundle
 const rawApiUrl: string = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const safeApiUrl =
-  typeof window !== 'undefined' &&
-  window.location.protocol === 'https:' &&
-  rawApiUrl.startsWith('http://')
-    ? rawApiUrl.replace('http://', 'https://')
-    : rawApiUrl;
+const safeApiUrl: string = import.meta.env.PROD
+  ? rawApiUrl.replace(/^http:\/\//, 'https://')
+  : rawApiUrl;
 
 export const config = {
   apiUrl: safeApiUrl,
