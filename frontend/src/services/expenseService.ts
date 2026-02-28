@@ -22,7 +22,7 @@ export const expenseService = {
    * Récupérer une dépense par ID
    */
   async getById(id: number): Promise<Expense> {
-    const response = await api.get<Expense>(`/api/expenses/${id}/`);
+    const response = await api.get<Expense>(`/api/expenses/${id}`);
     return response.data;
   },
 
@@ -38,7 +38,7 @@ export const expenseService = {
    * Mettre à jour une dépense
    */
   async update(id: number, data: Partial<ExpenseFormData>): Promise<Expense> {
-    const response = await api.put<Expense>(`/api/expenses/${id}/`, data);
+    const response = await api.put<Expense>(`/api/expenses/${id}`, data);
     return response.data;
   },
 
@@ -46,7 +46,7 @@ export const expenseService = {
    * Supprimer une dépense
    */
   async delete(id: number): Promise<void> {
-    await api.delete(`/api/expenses/${id}/`);
+    await api.delete(`/api/expenses/${id}`);
   },
 
   /**

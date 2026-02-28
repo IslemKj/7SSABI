@@ -34,11 +34,11 @@
 3. Ajoutez ces variables (si elles n'existent pas déjà):
 
 ```
-SECRET_KEY=votre-cle-secrete-ici
+SECRET_KEY=54260f7e43560b92e4c730465d4a1b23ff7a5660cca1ebbbff0f804b75ca1de7
 SMTP_HOST=smtp.zoho.com
 SMTP_PORT=587
-SMTP_USERNAME=votre@email.com
-SMTP_PASSWORD=votre-mot-de-passe-zoho
+SMTP_USERNAME=contact@involeo.com
+SMTP_PASSWORD=Islam2003@abc
 SMTP_FROM_EMAIL=votre@email.com
 CONTACT_EMAIL=contact@involeo.com
 DEBUG=False
