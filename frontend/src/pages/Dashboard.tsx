@@ -764,7 +764,7 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pb: 4 }}>
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ px: { xs: 0, sm: 2, md: 3 } }}>
         {/* En-tête moderne avec dégradé */}
         <Box
           sx={{
@@ -818,12 +818,18 @@ const Dashboard = () => {
                 fontWeight: 500,
               }}
             >
-              Vue d'ensemble de votre activité • {new Date().toLocaleDateString('fr-DZ', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
+              Vue d'ensemble de votre activité
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                {' • '}{new Date().toLocaleDateString('fr-FR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                {' • '}{new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </Box>
             </Typography>
           </Box>
         </Box>
@@ -882,12 +888,12 @@ const Dashboard = () => {
               <Grid item xs={12} md={8}>
                 <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: alpha(color, 0.3), background: alpha(color, 0.04), height: '100%' }}>
                   <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 2 }}>
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, fontSize: '0.75rem', color: 'text.secondary', mb: 0.5 }}>
                           Plafond CA — Auto-entrepreneur
                         </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 800, color }}>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                           {Math.round(pct)}% du plafond services
                         </Typography>
                       </Box>
@@ -895,7 +901,7 @@ const Dashboard = () => {
                         size="small"
                         endIcon={<ArrowForwardIcon />}
                         onClick={() => navigate('/fiscal')}
-                        sx={{ color, textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', '&:hover': { bgcolor: alpha(color, 0.1) } }}
+                        sx={{ color, textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0, '&:hover': { bgcolor: alpha(color, 0.1) } }}
                       >
                         Outils fiscaux
                       </Button>
@@ -1281,8 +1287,10 @@ const Dashboard = () => {
                                 border: '1px solid',
                                 borderColor: 'rgba(0, 0, 0, 0.06)',
                                 display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
                                 justifyContent: 'space-between',
-                                alignItems: 'center',
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 0 },
                                 transition: 'all 0.2s',
                                 cursor: 'pointer',
                                 '&:hover': {
@@ -1311,8 +1319,8 @@ const Dashboard = () => {
                                   {invoice.client_name}
                                 </Typography>
                               </Box>
-                              <Box sx={{ textAlign: 'right' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                              <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 1, sm: 0.5 } }}>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: { sm: 0.5 } }}>
                                   {invoice.total_ttc.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} DA
                                 </Typography>
                                 <Chip
@@ -1363,8 +1371,10 @@ const Dashboard = () => {
                                 border: '1px solid',
                                 borderColor: 'rgba(0, 0, 0, 0.06)',
                                 display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
                                 justifyContent: 'space-between',
-                                alignItems: 'center',
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                gap: { xs: 1, sm: 0 },
                                 transition: 'all 0.2s',
                                 cursor: 'pointer',
                                 '&:hover': {
