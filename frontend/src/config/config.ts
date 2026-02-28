@@ -4,16 +4,8 @@
  * Make sure VITE_API_URL uses HTTPS in production
  */
 
-// Determine API URL at runtime based on where the app is actually running.
-// This bypasses all env var issues: on localhost use local backend, everywhere
-// else (involeo.com, staging, etc.) use the production HTTPS backend.
-const apiUrl: string =
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? (import.meta.env.VITE_API_URL || 'http://localhost:8000')
-    : 'https://7ssabi-production.up.railway.app';
-
 export const config = {
-  apiUrl,
+  apiUrl: 'https://7ssabi-production.up.railway.app',
   appName: import.meta.env.VITE_APP_NAME || 'Involeo',
   tokenKey: 'involeo_token',
   userKey: 'involeo_user',
