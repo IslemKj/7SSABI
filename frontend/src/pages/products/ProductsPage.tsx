@@ -601,6 +601,7 @@ const ProductsPage = () => {
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
                   py: 2,
+                  display: { xs: 'none', sm: 'table-cell' },
                 }}
               >
                 Catégorie
@@ -793,7 +794,7 @@ const ProductsPage = () => {
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                       <Chip
                         icon={getCategoryIcon(product.category)}
                         label={product.category === 'produit' ? 'Produit' : 'Service'}

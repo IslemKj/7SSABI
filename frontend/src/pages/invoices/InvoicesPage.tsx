@@ -732,6 +732,7 @@ const InvoicesPage = () => {
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
                   py: 2,
+                  display: { xs: 'none', sm: 'table-cell' },
                 }}
               >
                 Statut
@@ -864,7 +865,7 @@ const InvoicesPage = () => {
                       })} {getCurrencySymbol(invoice.currency)}
                     </Typography>
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                     <Chip
                       icon={getStatusIcon(invoice.status)}
                       label={getStatusLabel(invoice.status)}
@@ -879,7 +880,7 @@ const InvoicesPage = () => {
                     />
                   </TableCell>
                   <TableCell align="right">
-                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap', maxWidth: { xs: 112, sm: 'none' } }}>
                       <IconButton
                         onClick={() => handleViewDetails(invoice)}
                         size="small"
@@ -901,6 +902,7 @@ const InvoicesPage = () => {
                         sx={{
                           bgcolor: alpha('#10b981', 0.1),
                           color: '#10b981',
+                          display: { xs: 'none', sm: 'inline-flex' },
                           '&:hover': {
                             bgcolor: alpha('#10b981', 0.2),
                             transform: 'scale(1.1)',
@@ -932,6 +934,7 @@ const InvoicesPage = () => {
                           sx={{
                             bgcolor: alpha('#6366f1', 0.1),
                             color: '#6366f1',
+                            display: { xs: 'none', sm: 'inline-flex' },
                             '&:hover': {
                               bgcolor: alpha('#6366f1', 0.2),
                               transform: 'scale(1.1)',
@@ -949,6 +952,7 @@ const InvoicesPage = () => {
                         sx={{
                           bgcolor: alpha('#25d366', 0.1),
                           color: '#25d366',
+                          display: { xs: 'none', sm: 'inline-flex' },
                           '&:hover': {
                             bgcolor: alpha('#25d366', 0.2),
                             transform: 'scale(1.1)',

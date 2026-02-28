@@ -190,8 +190,8 @@ const FiscalToolsPage = () => {
               <Grid item xs={12}>
                 <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid rgba(0,0,0,0.06)' }}>
                   <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
                         <TrendingUpIcon sx={{ color: ceilingColor }} />
                         Plafond du Chiffre d'Affaires
                       </Typography>
@@ -219,7 +219,7 @@ const FiscalToolsPage = () => {
                       </Alert>
                     )}
 
-                    <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between' }}>
+                    <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5 }}>
                       <Typography variant="body2" color="text.secondary">
                         {fmt(revenue)} DA réalisés sur {fmt(ceiling)} DA autorisés
                       </Typography>
@@ -379,8 +379,8 @@ const FiscalToolsPage = () => {
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Mois</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>CA (DA)</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>IFU estimé</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700 }}>Provision CASNOS</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, display: { xs: 'none', sm: 'table-cell' } }}>IFU estimé</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, display: { xs: 'none', sm: 'table-cell' } }}>Provision CASNOS</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>Total charges</TableCell>
                       </TableRow>
                     </TableHead>
@@ -392,8 +392,8 @@ const FiscalToolsPage = () => {
                           <TableRow key={m.month} sx={{ '&:nth-of-type(odd)': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
                             <TableCell sx={{ fontWeight: 600 }}>{MONTHS_FR[m.month - 1]}</TableCell>
                             <TableCell align="right">{fmt(m.revenue)} DA</TableCell>
-                            <TableCell align="right" sx={{ color: '#6366f1', fontWeight: 600 }}>{fmt(monthIFU)} DA</TableCell>
-                            <TableCell align="right" sx={{ color: '#10b981', fontWeight: 600 }}>{fmt(monthCasnos)} DA</TableCell>
+                            <TableCell align="right" sx={{ color: '#6366f1', fontWeight: 600, display: { xs: 'none', sm: 'table-cell' } }}>{fmt(monthIFU)} DA</TableCell>
+                            <TableCell align="right" sx={{ color: '#10b981', fontWeight: 600, display: { xs: 'none', sm: 'table-cell' } }}>{fmt(monthCasnos)} DA</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 700 }}>{fmt(monthIFU + monthCasnos)} DA</TableCell>
                           </TableRow>
                         );

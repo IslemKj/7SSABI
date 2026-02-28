@@ -800,7 +800,7 @@ const ExpensesPage = () => {
                           height: 36,
                           borderRadius: 1.5,
                           bgcolor: alpha('#ef4444', 0.1),
-                          display: 'flex',
+                          display: { xs: 'none', sm: 'flex' },
                           alignItems: 'center',
                           justifyContent: 'center',
                         }}
