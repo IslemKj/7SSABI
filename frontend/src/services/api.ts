@@ -31,10 +31,11 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide
+      // Token expiré ou invalide — nettoyer tout le state auth
       localStorage.removeItem(config.tokenKey);
       localStorage.removeItem(config.userKey);
-      window.location.href = '/login';
+      localStorage.removeItem('auth-storage'); // Zustand persist state
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }
