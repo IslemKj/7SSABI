@@ -661,8 +661,8 @@ const LandingPage = () => {
   const plans = [
     {
       name: 'Involeo',
-      price: '5,000',
-      period: '/mois',
+      price: '14,000',
+      period: '/an',
       features: [
         'Clients illimités',
         'Factures illimitées',
@@ -1135,7 +1135,7 @@ const LandingPage = () => {
                 fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' }
               }}
             >
-              5,000 DA par mois
+              14,000 DA par an
             </Typography>
             <Typography 
               variant="h6" 
@@ -1146,7 +1146,7 @@ const LandingPage = () => {
                 px: { xs: 2, md: 0 }
               }}
             >
-              Accès complet à toutes les fonctionnalités • Paiement sécurisé
+              Accès complet à toutes les fonctionnalités • soit ~1,167 DA/mois • Paiement sécurisé
             </Typography>
           </Box>
 
