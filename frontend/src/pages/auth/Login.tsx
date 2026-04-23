@@ -477,7 +477,7 @@ const Login = () => {
                     </Typography>
                   </Divider>
 
-                  <Box sx={{ textAlign: 'center' }}>
+                  {/* <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary" sx={{ display: 'inline', mr: 1 }}>
                       Pas encore de compte ?
                     </Typography>
@@ -495,7 +495,7 @@ const Login = () => {
                     >
                       S'inscrire gratuitement
                     </Link>
-                  </Box>
+                  </Box> */}
                 </Box>
               </Paper>
             </Box>
