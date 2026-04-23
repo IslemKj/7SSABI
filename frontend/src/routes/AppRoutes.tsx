@@ -54,7 +54,7 @@ const AppRoutes = () => {
 
       {/* Routes publiques */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/register-account-involeo-eximiumtech" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />

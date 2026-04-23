@@ -21,7 +21,7 @@ from ..middleware.rate_limit import limiter
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register-account-involeo-eximiumtech", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("3/hour")  # 3 inscriptions par heure max
 async def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """
