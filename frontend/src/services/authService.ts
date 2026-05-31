@@ -29,7 +29,7 @@ export const authService = {
    * Inscription utilisateur
    */
   async register(data: RegisterRequest): Promise<User> {
-    const response = await api.post<User>('/api/auth/register', data);
+    const response = await api.post<User>('/api/auth/register-account-involeo-eximiumtech', data);
     return response.data;
   },
 
